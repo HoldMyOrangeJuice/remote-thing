@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    {% load static %}
+{#    <script src="{% static "js/utils.js" %}"></script>#}
+{#    <link  rel="stylesheet" href="{% static "style.css" %}">#}
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <title>Title</title>
+
+
+{% csrf_token %}
+</head>
+
+<body>
+    <p>test</p>
+    <select id="tool" >
+
+        <option>pencil</option>
+        <option>erase</option>
+        <option></option>
+    </select>
+    
+    <button onclick="clear_canvas()">clear canvas</button>
+    <button onclick="next()">next page</button>
+    <button onclick="prev()">previous page</button>
+    <div class="row">
+        <div onclick="stroke_color('red')" id="red" class="color-pick"></div>
+        <div onclick="stroke_color('green')" id="green" class="color-pick"></div>
+        <div onclick="stroke_color('blue')" id="blue" class="color-pick"></div>
+        <div onclick="stroke_color('yellow')" id="yellow" class="color-pick"></div>
+    </div>
+
+    <style>
+        #canvas
+        {
+            border: 1px black solid;
+        }
+        .row{display: flex}
+        .color-pick{width: 20px;height: 20px; margin: 5px; border: 1px solid black;}
+        #red{background-color: red}
+        #green{background-color: green}
+        #blue{background-color: blue}
+        #yellow{background-color: yellow}
+    </style>
+
+
+    <canvas id="canvas" width="500" height="500" ></canvas>
+    <textarea id="textarea"></textarea>
+
+    <script>
+
+
+
+        const size = 500;
+        var mouseDown = false;
+        document.body.onmousedown = function() {
+          mouseDown=true;
+        };
+        document.body.onmouseup = function() {
+          mouseDown=false;
+        };
+
+        let canvas = $("#canvas");
+        let ctx = canvas[0].getContext("2d");
+        let line_started = false;
+        let cur_page = 228; // number is relative, i dont care
+
+
+        let last_updated = new Date().getTime();
+
+        let textarea = $("#textarea")[0];
+
+        textarea.addEventListener("input", (e)=>
+        {
+            send_data({"update_text": "yas", "data": e.target.value})
+        });
+
+        canvas[0].addEventListener("mousemove", (e)=>
+        {
+
+            if(mouseDown)
+            {
+
+                let rect = canvas[0].getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                let y = e.clientY - rect.top;
+
+                var tool = $("#tool").val();
+
+                if (tool === "pencil")
+                {
+                    if (!line_started)
+                    {
+
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        line_started = true;
+                    }
+                    else
+                    {
+
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                        send_data({"update_canvas_image": "yas", "action": tool, "data": canvas[0].toDataURL()});
+                        line_started = false;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        line_started = true;
+
+
+                        //console.log("data buffer", ctx.createImageData(100, 100).data.buffer, ctx.createImageData(100, 100).data);
+
+                    }
+                }
+                else if (tool === "erase" && mouseDown)
+                {
+                    ctx.clearRect(x, y, 20, 20);
+                    send_data({"update_canvas_image": "yas", "action": tool, "data": canvas[0].toDataURL()});
+                }
+
+
+            {#if (new Date().getTime() - last_updated > 150 || true)#}
+            {#{#}
+            {#    last_updated = new Date().getTime();#}
+            {#    #}
+            {#    console.log("updating canvas on server", "last upd");#}
+            //}
+            {#else#}
+            {#{#}
+            {#        console.log("cool down");#}
+            //}
+
+
+            }
+            else
+            {
+                line_started = false;
+            }
+        });
+
+
+        {# request for updates #}
+
+        let updates_listener = setInterval(()=>
+        {
+            console.log("update");
+            // save current canvas state
+
+
+            send_data(
+                {"request_updates": "yas"}, (update_data)=>
+
+                {
+
+                    if (update_data["canvas_data"])
+                    {
+                        console.log("recv", update_data);
+
+                        let data = update_data["canvas_data"];
+                        let page = update_data["page"];
+
+
+                        if (data)
+                        {
+                            let base_image = new Image();
+                            base_image.src = data;
+                            base_image.onload = function() {
+
+                            if (update_data["action"]==="erase" || page !== cur_page)
+                            {
+                                cur_page = page;
+                                ctx.clearRect(0,0,size,size);
+                                console.log("erasing")
+                            }
+
+                            ctx.drawImage(base_image, 0, 0);
+                            }
+                        }
+                    }
+                    if (update_data["text_data"])
+                    {
+                        console.log("got text response", update_data["text_data"]);
+                        $(textarea).val(update_data["text_data"])
+                    }
+
+                }
+
+            );
+        }, 300);
+
+
+        function send_data(data, handler)
+        {
+
+            console.log("sending", data);
+            var csrftoken = getCookie('csrftoken');
+
+            $.ajaxSetup(
+            {
+                beforeSend: function(xhr, settings)
+                {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            });
+
+            $.ajax(
+            {
+                type: "POST",
+                url: location.protocol + '//' + location.host + location.pathname,
+                data: data,
+                success: handler
+                //dataType: "application/json; charset=utf-8"
+            });
+
+        }
+
+        function clear_canvas()
+        {
+            ctx.clearRect(0,0,size,size);
+            send_data({"update_canvas_image": "yas", "action": "erase", "data": canvas[0].toDataURL()})
+        }
+
+        function next()
+        {
+            ctx.clearRect(0,0,size,size);
+            send_data({"next_page": "yas"});
+        }
+        function prev()
+        {
+            ctx.clearRect(0,0,size,size);
+            send_data({"prev_page": "yas"});
+        }
+
+        function stroke_color(color)
+        {
+            ctx.strokeStyle = color;
+        }
+
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+
+        document.addEventListener("drop", (r)=>{ console.log((r))});
+
+
+
+    </script>
+
+</body>
+
+</html>
