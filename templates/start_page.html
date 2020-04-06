@@ -16,13 +16,13 @@
 
 <body>
     <p>test</p>
-    <select id="tool" >
+    <select id="toolbox" >
 
         <option>pencil</option>
         <option>erase</option>
-        <option></option>
+        <option>text</option>
     </select>
-    
+    <input  id="eval-com"><button onclick="eval_com()">eval</button>
     <button onclick="clear_canvas()">clear canvas</button>
     <button onclick="next()">next page</button>
     <button onclick="prev()">previous page</button>
@@ -53,20 +53,33 @@
     <script>
 
 
+        function eval_com()
+        {
+
+            let com = $("#eval-com").val();
+            eval(com);
+            console.log("eval", com);
+        }
 
         const size = 500;
+
         var mouseDown = false;
-        document.body.onmousedown = function() {
+        document.body.onmousedown = function(e) {
           mouseDown=true;
+          mouse_down_handler(e);
         };
-        document.body.onmouseup = function() {
+        document.body.onmouseup = function(e) {
           mouseDown=false;
+          mouse_up_handler(e);
         };
 
         let canvas = $("#canvas");
         let ctx = canvas[0].getContext("2d");
         let line_started = false;
         let cur_page = 228; // number is relative, i dont care
+        ctx.font = "20px Arial";
+        var tool = $("#toolbox").val();
+        $("#toolbox")[0].addEventListener("input", ()=>{tool = $("#toolbox").val();});
 
 
         let last_updated = new Date().getTime();
@@ -88,7 +101,6 @@
                 let x = e.clientX - rect.left;
                 let y = e.clientY - rect.top;
 
-                var tool = $("#tool").val();
 
                 if (tool === "pencil")
                 {
@@ -146,7 +158,7 @@
 
         let updates_listener = setInterval(()=>
         {
-            console.log("update");
+            //console.log("update");
             // save current canvas state
 
 
@@ -157,7 +169,7 @@
 
                     if (update_data["canvas_data"])
                     {
-                        console.log("recv", update_data);
+                        //console.log("recv", update_data);
 
                         let data = update_data["canvas_data"];
                         let page = update_data["page"];
@@ -173,7 +185,7 @@
                             {
                                 cur_page = page;
                                 ctx.clearRect(0,0,size,size);
-                                console.log("erasing")
+                                //console.log("erasing")
                             }
 
                             ctx.drawImage(base_image, 0, 0);
@@ -182,7 +194,7 @@
                     }
                     if (update_data["text_data"])
                     {
-                        console.log("got text response", update_data["text_data"]);
+                        //console.log("got text response", update_data["text_data"]);
                         $(textarea).val(update_data["text_data"])
                     }
 
@@ -195,7 +207,7 @@
         function send_data(data, handler)
         {
 
-            console.log("sending", data);
+            //console.log("sending", data);
             var csrftoken = getCookie('csrftoken');
 
             $.ajaxSetup(
@@ -254,7 +266,80 @@
             }
             return cookieValue;
         }
+        function mouse_up_handler(ev)
+        {
+            //ctx.fillText("Hello World", 10, 50);
+        }
+        function mouse_down_handler(ev)
+        {
+            if (ev.toElement.tagName === "CANVAS") {
+                $(".temp").remove();
+            }
 
+            if (tool === "text") {
+
+
+                let x = ev.pageX;
+                let y = ev.pageY;
+
+                if (ev.toElement.tagName === "CANVAS") {
+
+
+                    jQuery('<input/>', {
+                        "class": 'temp',
+                        id: "input-canvas-text",
+                        "style": `position:absolute; left:${x}px; top:${y}px`,
+                    }).appendTo('body');
+
+
+
+                    let button = document.createElement("button");
+                    button.style.position = "absolute";
+                    button.style.top = `${y}px`;
+                    button.style.left = `${x + 150}px`;
+                    button.onclick = () => {
+                        add_canvas_text(x, y)
+                    };
+                    button.id = "btn-conf";
+                    button.innerText = "t";
+                    button.className = "temp";
+
+                    document.getElementsByTagName("body")[0].appendChild(button);
+                    //$("#input-canvas-text").focus();
+                    {#let conf_btn=$('<button/>', {#}
+                    {#    id:"btn-conf",#}
+                    {#    "class": 'temp',#}
+                    {#    "type": "submit",#}
+                    {#    "text": "text",#}
+                    {#    "data-x": x,#}
+                    {#    "data-y": y,#}
+                    {#    "style":#}
+                    {#    title: 'add text to canvas',#}
+
+                    //});
+                    //conf_btn.appendTo('body');
+                    //$("#btn-conf").click();
+
+                }
+            }
+            //$("body").append(`<input style=position:absolute top=${x}px left=${y}px><button></button>`);
+        }
+        function add_canvas_text(x, y)
+        {
+            let box = canvas[0].getBoundingClientRect();
+            let c_x = x - box.left;
+            let c_y = y - box.top;
+            console.log("click");
+            let val = $("#input-canvas-text").val();
+            console.log(val, c_x, c_y);
+            ctx.fillText(val, c_x, c_y);
+            $(".temp").remove();
+            send_data({"update_canvas_image": "yas", "action": "text", "data": canvas[0].toDataURL()})
+        }
+        function font(size, font)
+        {
+            ctx.font= `${size!==undefined?size:20}px, ${font!==undefined?font:"Arial"}`
+        }
 
         document.addEventListener("drop", (r)=>{ console.log((r))});
 
