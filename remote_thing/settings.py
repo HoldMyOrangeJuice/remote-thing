@@ -37,7 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'remoteApp.apps.RemoteappConfig',
+    'channels',
 ]
+
+CHANNEL_LAYERS = {}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -69,6 +74,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'remote_thing.wsgi.application'
+
+ASGI_APPLICATION = "remote_thing.routing.application"
 
 
 # Database

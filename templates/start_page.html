@@ -7,6 +7,7 @@
 {#    <script src="{% static "js/utils.js" %}"></script>#}
 {#    <link  rel="stylesheet" href="{% static "style.css" %}">#}
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static "style.css" %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <title>Title</title>
 
@@ -14,43 +15,162 @@
 {% csrf_token %}
 </head>
 
-<body>
-    <p>test</p>
-    <select id="toolbox" >
+<body id="body">
 
-        <option>pencil</option>
-        <option>erase</option>
-        <option>text</option>
-    </select>
-    <input  id="eval-com"><button onclick="eval_com()">eval</button>
-    <button onclick="clear_canvas()">clear canvas</button>
-    <button onclick="next()">next page</button>
-    <button onclick="prev()">previous page</button>
-    <div class="row">
-        <div onclick="stroke_color('red')" id="red" class="color-pick"></div>
-        <div onclick="stroke_color('green')" id="green" class="color-pick"></div>
-        <div onclick="stroke_color('blue')" id="blue" class="color-pick"></div>
-        <div onclick="stroke_color('yellow')" id="yellow" class="color-pick"></div>
-    </div>
+    <div id="toolbar">
 
-    <style>
-        #canvas
-        {
-            border: 1px black solid;
-        }
-        .row{display: flex}
-        .color-pick{width: 20px;height: 20px; margin: 5px; border: 1px solid black;}
-        #red{background-color: red}
-        #green{background-color: green}
-        #blue{background-color: blue}
-        #yellow{background-color: yellow}
-    </style>
+        <div class="toolbar-row ">
+
+            <div class="aligned-group">
+                 <select id="toolbox" >
+                <option>pencil</option>
+                <option>erase</option>
+                <option>text</option>
+                <option>edit background</option>
+            </select>
+            </div>
 
 
-    <canvas id="canvas" width="500" height="500" ></canvas>
+            <div class="eval aligned-group">
+                <input id="eval-com">
+                <button onclick="eval_com()">eval</button>
+            </div>
+
+            <div class="aligned-group">
+                <button onclick="clear_canvas(true)">clear canvas</button>
+            </div>
+
+            <div class="nav-page aligned-group">
+                <button class="nav-page-btn" onclick="prev()">previous page</button>
+                <button  class="nav-page-btn" onclick="next()">next page</button>
+            </div>
+
+
+        </div>
+        <div class="toolbar-row">
+
+            <div class="row pick_color">
+                <table>
+                    <tr>
+                        <td>
+                            <div onclick="stroke_color('red')" id="red" class="color-pick"></div>
+
+                        </td>
+                        <td>
+                            <div onclick="stroke_color('green')" id="green" class="color-pick"></div>
+
+                        </td>
+                        <td>
+                            <div onclick="stroke_color('blue')" id="blue" class="color-pick"></div>
+                        </td>
+                        <td>
+                            <div onclick="stroke_color('yellow')" id="yellow" class="color-pick"></div>
+                        </td>
+
+                        <td>
+                            <div onclick="stroke_color('black')" id="yellow" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('white')" id="white" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('gray')" id="gray" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#626578')" id="#626578" class="color-pick"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+<div onclick="stroke_color('#78d65e')" id="#78d65e" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#1d7006')" id="#1d7006" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#e34bd4')" id="#e34bd4" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#e86183')" id="#e86183" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#6fb4e8')" id="#6fb4e8" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#095894')" id="#095894" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#053457')" id="#053457" class="color-pick"></div>
+                        </td>
+                        <td>
+<div onclick="stroke_color('#dea02c')" id="#dea02c" class="color-pick"></div>
+                        </td>
+                    </tr>
+                </table>
+
+            </div>
+        </div>
+     </div>
+
+
+
+        <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>
+        <canvas class="main-action" width="1000" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
+
+{#    <img style="margin-left: 500px; height: 100px;width: 200px" src="https://www.w3schools.com/w3css/img_lights.jpg">#}
+
     <textarea id="textarea"></textarea>
 
     <script>
+            for (let cp of $(".color-pick"))
+            {
+                cp.style.backgroundColor = cp.id;
+            }
+
+        let last_image_drop = new Date().getTime();
+        function drop(evt) {
+
+            console.log(evt);
+            if (new Date().getTime() - last_image_drop < 1000) {
+                return;
+            }
+
+            last_image_drop = new Date().getTime();
+
+            let canvas_box = canvas[0].getBoundingClientRect();
+            evt.stopPropagation();
+            evt.preventDefault();
+            let imageUrl = evt.dataTransfer.getData('text/html');
+            let rex = /src="?([^"\s]+)"?\s*/;
+            let url;
+            url = rex.exec(imageUrl);
+            console.log(url);
+            //alert(url[1]);
+            let page_x = evt.pageX - canvas_box.left;
+            let page_y = evt.pageY - canvas_box.top;
+            console.log(page_x, page_y);
+
+            let img = new Image();
+            img.src = url[1];
+
+
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                $("#movable-layer").append(`<img class="dragable bg-image" style="position:absolute; top:${page_y - height / 2}px; left:${page_x - width / 2}px" src="${url[1]}"></img>`)
+
+                let data = {
+                    "bg-image-update": "true",
+                    "bg_image_data":
+                        {
+                            "url": img.src,
+                            "coords": {"x": page_y - height / 2, "y": page_x - width / 2}
+                        }
+                };
+                send_data(data);
+            };
+
+        }
 
 
         function eval_com()
@@ -61,16 +181,16 @@
             console.log("eval", com);
         }
 
-        const size = 500;
+        const size = 1000;
 
         var mouseDown = false;
         document.body.onmousedown = function(e) {
-          mouseDown=true;
           mouse_down_handler(e);
+          mouseDown=true;
         };
         document.body.onmouseup = function(e) {
-          mouseDown=false;
           mouse_up_handler(e);
+          mouseDown=false;
         };
 
         let canvas = $("#canvas");
@@ -79,10 +199,28 @@
         let cur_page = 228; // number is relative, i dont care
         ctx.font = "20px Arial";
         var tool = $("#toolbox").val();
-        $("#toolbox")[0].addEventListener("input", ()=>{tool = $("#toolbox").val();});
+        $("#toolbox")[0].addEventListener("input", ()=>
+        {
+            tool = $("#toolbox").val();
+            if (tool==="edit background")
+            {
+                canvas[0].style.zIndex = "1";
+                $("#movable-layer")[0].style.zIndex = "2";
+            }
+            else
+            {
+                canvas[0].style.zIndex = "2";
+                $("#movable-layer")[0].style.zIndex = "1";
+            }
+        });
+
+        canvas[0].addEventListener('drop', drop, false);
 
 
         let last_updated = new Date().getTime();
+
+        let pencil_update_rate = 1000;
+        let erase_update_rate = 1000;
 
         let textarea = $("#textarea")[0];
 
@@ -91,159 +229,172 @@
             send_data({"update_text": "yas", "data": e.target.value})
         });
 
-        canvas[0].addEventListener("mousemove", (e)=>
+        document.addEventListener("mousemove", (e)=>
         {
 
-            if(mouseDown)
-            {
+            if(mouseDown) {
 
                 let rect = canvas[0].getBoundingClientRect();
                 let x = e.clientX - rect.left;
                 let y = e.clientY - rect.top;
 
-
-                if (tool === "pencil")
+                if (e.toElement.tagName === "CANVAS")
                 {
-                    if (!line_started)
+                    if (tool === "pencil")
                     {
+                        if (!line_started)
+                        {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            line_started = true;
+                        } else
+                        {
+                            ctx.lineTo(x, y);
+                            ctx.stroke();
 
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        line_started = true;
+                            if (new Date().getTime() - last_updated > pencil_update_rate) {
+                                last_updated = new Date().getTime();
+                                send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                            }
+
+                            line_started = false;
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            line_started = true;
+
+                        }
                     }
-                    else
+                    else if (tool === "erase" && mouseDown)
                     {
 
-                        ctx.lineTo(x, y);
-                        ctx.stroke();
-                        send_data({"update_canvas_image": "yas", "action": tool, "data": canvas[0].toDataURL()});
-                        line_started = false;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        line_started = true;
+                        let page_x = e.pageX;
+                        let page_y = e.pageY;
+                        if ($(".temp")[0]) {
+                            $(".temp")[0].style = `position:absolute; left:${page_x - 10}px; top:${page_y - 10}px; width:20px; height:20px; border: 1px black solid; z-index:3`;
+                        } else {
+                            jQuery('<div></div>', {
+                                "class": 'temp delete_on_mouse_up',
+                                "style": `position:absolute; left:${page_x - 10}px; top:${page_y - 10}px; width:20px; height:20px; border: 1px black solid;`,
+                            }).appendTo('body');
+                        }
 
+                        ctx.clearRect(x - 10, y - 10, 20, 20);
 
-                        //console.log("data buffer", ctx.createImageData(100, 100).data.buffer, ctx.createImageData(100, 100).data);
+                        if (new Date().getTime() - last_updated > erase_update_rate) {
+                            last_updated = new Date().getTime();
+                            send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                        }
 
                     }
                 }
-                else if (tool === "erase" && mouseDown)
+                else
                 {
-                    ctx.clearRect(x, y, 20, 20);
-                    send_data({"update_canvas_image": "yas", "action": tool, "data": canvas[0].toDataURL()});
+                    line_started = false;
+
                 }
-
-
-            {#if (new Date().getTime() - last_updated > 150 || true)#}
-            {#{#}
-            {#    last_updated = new Date().getTime();#}
-            {#    #}
-            {#    console.log("updating canvas on server", "last upd");#}
-            //}
-            {#else#}
-            {#{#}
-            {#        console.log("cool down");#}
-            //}
-
-
-            }
-            else
-            {
-                line_started = false;
             }
         });
 
 
-        {# request for updates #}
 
-        let updates_listener = setInterval(()=>
+
+        let socket = new WebSocket("ws://"+location.host + location.pathname);
+
+        socket.onopen = function(event)
         {
-            //console.log("update");
-            // save current canvas state
+            console.log("socket opened!", event);
+        };
+
+        socket.onmessage = function(event)
+        {
 
 
-            send_data(
-                {"request_updates": "yas"}, (update_data)=>
-
+            let data = JSON.parse(event.data);
+            if (data.reason === "page_data_update")
+            {
+                if (cur_page !== data.page)
                 {
+                    cur_page = data.page;
+                    clear_canvas(false);
+                }
+                let canvas_image = data.canvas_data;
+                let text = data.text;
+                let page = data.page;
+                let bg_data = data.bg_images_data;
+                if (canvas_image)
+                {
+                    let base_image = new Image();
+                    base_image.src = canvas_image;
+                    base_image.onload = function() {
 
-                    if (update_data["canvas_data"])
-                    {
-                        //console.log("recv", update_data);
-
-                        let data = update_data["canvas_data"];
-                        let page = update_data["page"];
-
-
-                        if (data)
-                        {
-                            let base_image = new Image();
-                            base_image.src = data;
-                            base_image.onload = function() {
-
-                            if (update_data["action"]==="erase" || page !== cur_page)
-                            {
-                                cur_page = page;
-                                ctx.clearRect(0,0,size,size);
-                                //console.log("erasing")
-                            }
-
-                            ctx.drawImage(base_image, 0, 0);
-                            }
-                        }
+                    {#if (update_data["action"]==="erase" || page !== cur_page)#}
+                    {#{#}
+                    {#    cur_page = page;#}
+                    {#    ctx.clearRect(0,0,size,size);#}
+                    {#    //console.log("erasing")#}
+                    //}
+                    ctx.clearRect(0,0,size,size);
+                    ctx.drawImage(base_image, 0, 0);
                     }
-                    if (update_data["text_data"])
-                    {
-                        //console.log("got text response", update_data["text_data"]);
-                        $(textarea).val(update_data["text_data"])
-                    }
-
                 }
 
-            );
-        }, 300);
+                if (text)
+                {
+                    $(textarea).val(text)
+                }
+                if (page)
+                {
+                    cur_page = page;
+                }
+                if (bg_data)
+                {
+                    let layer = $("#movable-layer");
+                    layer.empty();
+                    for (let image_data of bg_data)
+                    {
+                        // coords are absolute. since we append to div have to make them relative to that dov
+                        let box = layer[0].getBoundingClientRect();
+                        add_movable_image(image_data.coords.x - box.left, image_data.coords.y - box.top, image_data.url)
+                    }
+                }
+            }
+        };
 
+        function add_movable_image(x, y, url)
+        {
+            let img = new Image();
+            img.src = url;
+            img.onload = ()=>
+            {
+                let width = img.width;
+                let height = img.height;
+                $("#movable-layer").append(`<img class="dragable bg-image" style="z-index:1; position:absolute; top:${y}px; left:${x}px" src="${url}"></img>`)
+
+            };
+        }
 
         function send_data(data, handler)
         {
 
-            //console.log("sending", data);
-            var csrftoken = getCookie('csrftoken');
-
-            $.ajaxSetup(
-            {
-                beforeSend: function(xhr, settings)
-                {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                }
-            });
-
-            $.ajax(
-            {
-                type: "POST",
-                url: location.protocol + '//' + location.host + location.pathname,
-                data: data,
-                success: handler
-                //dataType: "application/json; charset=utf-8"
-            });
-
+            socket.send(JSON.stringify(data));
         }
 
-        function clear_canvas()
+        function clear_canvas(save)
         {
             ctx.clearRect(0,0,size,size);
-            send_data({"update_canvas_image": "yas", "action": "erase", "data": canvas[0].toDataURL()})
+            if (save)
+                send_data({"client-canvas-update": "yas","canvas-image": canvas[0].toDataURL()})
         }
 
         function next()
         {
             ctx.clearRect(0,0,size,size);
-            send_data({"next_page": "yas"});
+            send_data({"page-update": "next"});
         }
         function prev()
         {
             ctx.clearRect(0,0,size,size);
-            send_data({"prev_page": "yas"});
+            send_data({"page-update": "prev"});
         }
 
         function stroke_color(color)
@@ -268,12 +419,35 @@
         }
         function mouse_up_handler(ev)
         {
+
+            $('div.temp.delete_on_mouse_up').remove();
+
             //ctx.fillText("Hello World", 10, 50);
+            if (ev.toElement.tagName === "CANVAS")
+            {
+                // mouse up on canvas => line finished
+                if (tool === "pencil")
+                {
+                    line_started=false;
+                    send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+
+                }
+            }
+            else if (line_started)
+            {
+                // line was started on canvas but mouse up outside
+                send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                line_started=false;
+                mouseDown=false;
+            }
         }
         function mouse_down_handler(ev)
         {
-            if (ev.toElement.tagName === "CANVAS") {
-                $(".temp").remove();
+            $([".temp"][".delete_on_mouse_down"]).remove();
+
+            if (ev.toElement.tagName !== "CANVAS")
+            {
+                line_started = false;
             }
 
             if (tool === "text") {
@@ -288,7 +462,7 @@
                     jQuery('<input/>', {
                         "class": 'temp',
                         id: "input-canvas-text",
-                        "style": `position:absolute; left:${x}px; top:${y}px`,
+                        "style": `position:absolute; left:${x}px; top:${y}px; z-index:4`,
                     }).appendTo('body');
 
 
@@ -297,6 +471,7 @@
                     button.style.position = "absolute";
                     button.style.top = `${y}px`;
                     button.style.left = `${x + 150}px`;
+                    button.style.zIndex = "3";
                     button.onclick = () => {
                         add_canvas_text(x, y)
                     };
@@ -322,6 +497,57 @@
 
                 }
             }
+
+            if (tool === "edit background")
+            {
+                let bg_layer = $("#movable-layer")[0];
+                if (ev.toElement.className.includes("dragable"))
+                {
+
+                    // found dragable image
+                    let dragable = ev.toElement;
+
+                    bg_layer.ondragover = function(event) {
+                         event.preventDefault();
+                     };
+                    document.ondragover = function(event) {
+                         event.preventDefault();};
+
+                    document.ondrop = (e)=>
+                    {
+                        let box = bg_layer.getBoundingClientRect();
+                        let x = e.pageX; //- box.left;
+                        let y = e.pageY;//- box.top;
+                        let x_rel = e.pageX - box.left;
+                        let y_rel = e.pageY - box.top;
+
+                        if (y < 1000 + box.top)
+                        {
+
+
+                            dragable.style.top = `${y_rel - dragable.height / 2}px`;
+                            dragable.style.left = `${x_rel - dragable.width / 2}px`;
+
+                            //image_data.url, image_data.coords
+                            let data = {
+                                "bg-image-update": "true",
+                                "bg_image_data":
+                                    {
+                                        "url": dragable.src,
+                                        "coords": {"x": x - dragable.width / 2, "y": y - dragable.height / 2}
+                                    }
+                            };
+                            send_data(data);
+                        }
+                        else
+                            {
+                                console.log("delete image");
+                                $(dragable).remove()
+                            }
+
+                    }
+                }
+            }
             //$("body").append(`<input style=position:absolute top=${x}px left=${y}px><button></button>`);
         }
         function add_canvas_text(x, y)
@@ -329,19 +555,17 @@
             let box = canvas[0].getBoundingClientRect();
             let c_x = x - box.left;
             let c_y = y - box.top;
-            console.log("click");
             let val = $("#input-canvas-text").val();
-            console.log(val, c_x, c_y);
             ctx.fillText(val, c_x, c_y);
             $(".temp").remove();
-            send_data({"update_canvas_image": "yas", "action": "text", "data": canvas[0].toDataURL()})
+            send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
         }
         function font(size, font)
         {
             ctx.font= `${size!==undefined?size:20}px, ${font!==undefined?font:"Arial"}`
         }
 
-        document.addEventListener("drop", (r)=>{ console.log((r))});
+        //document.addEventListener("drop", (r)=>{ console.log((r))});
 
 
 
@@ -350,3 +574,4 @@
 </body>
 
 </html>
+{#?9:47:15#}
