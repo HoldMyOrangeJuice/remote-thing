@@ -1,0 +1,25 @@
+msging standart:
+
+message from JavaScript
+{"initiator": initiator, "data":{complex_json} "client":{ip:ip, ...}}
+
+message from Server
+{'initiator': initiator, "data":{complex_json}, "page": page}
+
+initiator -> event
+invoker -> client
+
+pattern on server:
+
+message received ->
+convert json to cl_msg = ClientMessage() instance ->
+if cl_msg.is_update() pass cl_msg to function to process updated data and sync with database ->
+convert cl_msg to sv_msg = ServerMessage() ->
+send sv_msg to all consumers to update client-side
+
+data std
+those a ways to transfer data to/from server from/to client
+canvas | data: {"url": url}
+text   | data: {"text": text}
+bg     | data: {"uuid": {"url": url, "coords":{"x": x, "y": y}}}
+

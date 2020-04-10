@@ -25,7 +25,7 @@ SECRET_KEY = '5#bfz8=i2p=5hb7typ(0!@(j3@d(^$-q#*l&$x()-3)p13o2l1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["qwertty.com", "127.0.0.1"]
 
 
 # Application definition

@@ -1,53 +1,48 @@
-import asyncio
 import json
-from django.contrib.auth import get_user_model
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
-#from .models import Thread, ChatMessage
 from remoteApp.models import PageData
 import datetime
 import ast
-from asgiref.sync import sync_to_async
+from remoteApp.communication.sv_message import ServerMessage
+from remoteApp.communication.cl_message import ClientMessage
+from remoteApp.communication.values import Update, Field
 
-# {reason:page_data_update, canvas_data: text_data, page}
+# {initiator: page_data_update, data: text_data, page}
+
+# ip: consumer class
 
 
-consumers = []
 
 class Consumer(AsyncConsumer):
+
+    consumers = {}
 
     async def websocket_connect(self, event):
         print("connected", event, datetime.datetime.now().strftime("%H:%M:%S"))
 
         # if we created consumers before
-        if consumers:
-            self.current_page = consumers[0].current_page
+        if Consumer.consumers:
+            self.current_page = list(Consumer.consumers.values())[0].current_page
         else:
             self.current_page = 0
 
-        consumers.append(self)
 
 
-        await self.send(
-            {
-                "type": "websocket.accept"
-            })
-        # bg_data = await self.get_page_data("bg_images", current_page)
-        #
-        # try:
-        #     loaded_bg_data = ast.literal_eval(bg_data)
-        # except:
-        #     loaded_bg_data = []
+        # accept connection
+        await self.send({"type": "websocket.accept"})
 
-        data = json.dumps({
-            "reason": "page_data_update",
-            "canvas_data": await self.get_page_data("canvas_image", self.current_page),
-            "text": await self.get_page_data("text", self.current_page),
-            "bg_images_data": await self.get_parsed_bg_data(),  # bg_data is a stringified json stored in db.
-            "page": self.current_page
-        })
+        cv_data = await self.get_page_data("canvas_image", self.current_page)
+        txt_data = await self.get_page_data("text", self.current_page)
+        bg_data = await self.get_parsed_bg_data()  # bg_data is a stringified json stored in db.
 
-        await self.websocket_send(data)
+        # send every type of data on connect
+        msg = ServerMessage(consumer=self, initiator="page_data_update", data=cv_data, page=self.current_page)
+        await msg.send()
+        msg = ServerMessage(consumer=self, initiator="page_data_update", data=txt_data, page=self.current_page)
+        await msg.send()
+        msg = ServerMessage(consumer=self, initiator="page_data_update", data=bg_data, page=self.current_page)
+        await msg.send()
 
     async def websocket_send(self, data):
 
@@ -59,28 +54,44 @@ class Consumer(AsyncConsumer):
 
     async def websocket_receive(self, event):
 
-        data = json.loads(event.get("text"))
-        if data.get("client-canvas-update"):
-            if data.get("canvas-image"):
-                await self.add_page_data(field="canvas_image", data=data.get("canvas-image"), page_index=self.current_page)
+        client_msg = ClientMessage(event.get("text"))
 
-                await self.send_update_to_all(consumers, data={
-                    "reason": "page_data_update", "canvas_data": data.get("canvas-image"), "page": self.current_page
-                }, except_consumer=self)
+        Consumer.consumers[client_msg.client_ip()] = self
 
-        if data.get("client-text-update"):
-            if data.get("text_data"):
-                await self.add_page_data("text", data.get("text_data")), "weird func"
+        if client_msg.is_update():
+            # save to db
+            client_msg.save_changes(to_page=self.current_page)
 
-                await self.send_update_to_all(consumers, data={
+            # send to users
+            self.send_update_to_consumers(client_msg)
+
+        if client_msg.is_command():
+            perform_command(client_msg.data)
+
+
+        if client_msg.initiator == Update.client_canvas_update:
+
+            if client_msg.data:
+                # first save changes made by user
+                await self.add_page_data(field="canvas_image", data=client_msg.data, page_index=self.current_page)
+
+                # then send them to all clients
+                msg = ServerMessage(all_consumers=consumers, initiator=client_msg.initiator, data=client_msg.data, page=self.current_page, except_consumer=self)
+                await msg.send()
+
+        if client_msg.initiator == Update.client_text_update:
+
+            if client_msg.data:
+                await self.add_page_data("text", client_msg.data, page_index=self.current_page)
+
+                await self.send_update_to_all(data={
                     "reason": "page_data_update", "text": data.get("text_data"), "page": self.current_page
                 }, except_consumer=self)
 
-        if data.get("bg-image-update"):
+        if client_msg.initiator == Update.client_bg_update:
 
             # save to db
-
-            await self.add_page_data("bg_images", data.get("bg_image_data"), self.current_page)
+            await self.save_msg_data(client_msg)
 
             # send to users
             try:
@@ -88,7 +99,7 @@ class Consumer(AsyncConsumer):
             except:
                 bg_images_data = []
 
-            await self.send_update_to_all(consumers, data=
+            await self.send_update_to_all(data=
             {
                 "reason": "page_data_update",
                 "bg_images_data": bg_images_data,
@@ -107,9 +118,43 @@ class Consumer(AsyncConsumer):
                     if item.get("url") == url:
                         bg_images_data.remove(item)
                         self.set_page_data("bg_images", bg_images_data, self.current_page)
-                        
-            
-        
+
+        if data.get("play_sound"):
+            await self.send_update_to_all(data=
+            {
+                "reason": "play-sound",
+                "sound": data.get("link"),
+                "page": self.current_page,
+            }, except_consumer=None)
+
+        if data.get("log"):
+            await self.send_update_to_all(data=
+            {
+                "reason": "log",
+                "msg": data.get("msg"),
+                "page": self.current_page,
+            }, except_consumer=self)
+
+        if data.get("last-interaction"):
+            print("last-interaction")
+            await self.send_update_to_all( data=
+            {
+                "reason": "last-interaction",
+                "time": data.get("time"),
+                "page": self.current_page,
+            }, except_consumer=self)
+
+        if data.get("command"):
+
+            if data.get("cont") == "send-last-inter":
+
+                await self.send_update_to_all(data=
+                {
+                    "reason": "execute",
+                    "data": "send_last_inter",
+                    "page": self.current_page,
+                }, except_consumer=self)
+
         if data.get("page-update"):
             if data.get("page-update") == "next":
 
@@ -123,7 +168,7 @@ class Consumer(AsyncConsumer):
                 #current_page -= 1
 
 
-            await self.send_update_to_all(consumers=consumers, data=
+            await self.send_update_to_all( data=
             {
                 "reason": "page_data_update",
                 "canvas_data": await self.get_page_data(field="canvas_image", page_index=self.current_page),
@@ -133,9 +178,9 @@ class Consumer(AsyncConsumer):
 
             }, except_consumer=None)
 
-    async def send_update_to_all(self, consumers, data, except_consumer=None):
+    async def send_update_to_all(self, data, except_consumer=None):
 
-        for consumer in consumers:
+        for consumer in Consumer.consumers:
             if consumer == except_consumer:
                 pass
             else:
@@ -167,28 +212,22 @@ class Consumer(AsyncConsumer):
     @database_sync_to_async
     def add_page_data(self, field, data, page_index):
         page_object = PageData.objects.filter(page=page_index)
-        #print("is page existing?", page_object)
+
         if page_object.count() > 0:
-            if field == "canvas_image":
-                page_object.update(canvas_image=data)
-            elif field == "text":
-                page_object.update(text=data)
-            elif field == "bg_images":
-
                 existing_data = self.sync_get_page_data("bg_images", self.current_page)
-
+                # big mess
                 if existing_data:
 
                     # string back to list
 
                     current_images_data = ast.literal_eval(existing_data)
 
-                    for item in current_images_data:
+                    for item in existing_data:
                         if item.get("url") == data.get("url"):
                             # avoid duplicated images because this is only way thy get deleted.
                             # Otherwise images getting duplicated in database every time client moves them
                             # this is where server-client async happens
-                            current_images_data.remove(item)
+                            existing_data.remove(item)
 
                 else:
                     current_images_data = []
@@ -220,10 +259,48 @@ class Consumer(AsyncConsumer):
             page = page[0]
             return page.__getattribute__(field)
 
+    @database_sync_to_async
+    def save_msg_data(self, msg):
+
+        # todo:
+        # database stores field data as dictionary
+        # example: canvas_data filed = {"url": "base64"}
+        page_obj = PageData.objects.filter(page=self.current_page)
+        if page_obj.count() > 0:
+            existing_data = {}
+        if msg.updated_field() != self.Update.client_bg_update:
+            # override data
+            await self.set_page_data(field=msg.updated_field, data=msg.data, page=self.current_page)
+        else:
+            # add data to existing
+            await self.add_page_data(field=msg.updated_field, data=msg.data, page=self.current_page)
+
+    # call this func only if cl_msg.is_update()
+
+    def send_update_to_consumers(self, cl_msg):
+
+        sv_msg = ServerMessage(initiator=cl_msg.initiator,
+                               all_consumers=consumers,
+                               except_consumer=self,
+                               data=cl_msg.data,
+                               page=self.current_page)
+        await sv_msg.send()
 
 
+
+        await self.send_update_to_all(data=
+        {
+            "reason": "execute",
+            "data": "send_last_inter",
+            "page": self.current_page,
+        }, except_consumer=self)
 
     async def websocket_disconnect(self, event):
         print("disconnected", event)
-        consumers.remove(self)
+        for ip in Consumer.consumers.keys():
+            if Consumer.consumers[ip] == self:
+                del Consumer.consumers[ip]
 
+    def perform_command(self, command_data):
+        # command data is {...}
+        command = command_data.get("command")

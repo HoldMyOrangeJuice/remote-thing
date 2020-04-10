@@ -114,3 +114,12 @@ select
     display: flex;
     align-self: flex-start;
 }
+
+#textarea
+{
+width: 100%;
+}
+.body
+{
+    height: 2000px;
+}

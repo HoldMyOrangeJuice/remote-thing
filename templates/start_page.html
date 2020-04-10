@@ -49,6 +49,7 @@
         </div>
         <div class="toolbar-row">
 
+            <textarea id="textarea" placeholder="chat here"></textarea>
             <div class="row pick_color">
                 <table>
                     <tr>
@@ -113,19 +114,90 @@
      </div>
 
 
+        <div style="">
+            <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>
+            <canvas class="main-action" width="1000" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
 
-        <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>
-        <canvas class="main-action" width="1000" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
-
+        </div>
 {#    <img style="margin-left: 500px; height: 100px;width: 200px" src="https://www.w3schools.com/w3css/img_lights.jpg">#}
 
-    <textarea id="textarea"></textarea>
+
 
     <script>
+
+
+            let client_interaction=false;
+
+            document.addEventListener("mousedown", ()=>
+            {
+                let date = new Date();
+                client_interaction = date.getTime();
+            });
+
+
             for (let cp of $(".color-pick"))
             {
                 cp.style.backgroundColor = cp.id;
             }
+
+        function bc_log(str_data)
+        {
+            send_data({"log":"yes", "msg": str_data});
+        }
+
+        function get_my_last_interaction()
+        {
+            send_data({"last-interaction":"yes" , "time": client_interaction});
+        }
+
+        function send_your_last_interaction()
+        {
+            send_data({"command": "yes", "cont": "send-last-inter"})
+        }
+
+        function play_sound(link)
+        {
+            let audio;
+            if (link === "darude")
+                audio = new Audio( "{% static  "darude.ogg" %}" );
+            else if (link === "relax")
+                audio = new Audio( "{% static  "relax.ogg" %}" );
+            else if (link === "soup")
+                audio = new Audio( "{% static  "soup.ogg" %}" );
+
+            if (audio)
+            {
+
+                try
+                {
+                    console.log("tryna play", link);
+                    audio.play();
+
+                    if (link === "darude")
+                    {
+                        setTimeout(()=>{alert("song pls?")}, 5000);
+                    }
+
+                    send_data({"log":"yes", "msg": "song played"});
+                }
+                catch (e)
+                {
+                    console.log(e);
+                    send_data({"log":"yes", "msg": `song failed due to ${e.toString()}`});
+                }
+            }
+            else
+            {
+                send_data({"log":"yes", "msg": `file ${link} not found`});
+            }
+
+        }
+
+        function snd(link)
+        {
+            console.log("sending data");
+            send_data({"play_sound":"yes", 'link': link})
+        }
 
         let last_image_drop = new Date().getTime();
         function drop(evt) {
@@ -199,6 +271,7 @@
         let cur_page = 228; // number is relative, i dont care
         ctx.font = "20px Arial";
         var tool = $("#toolbox").val();
+        let erase_is_on = false;
         $("#toolbox")[0].addEventListener("input", ()=>
         {
             tool = $("#toolbox").val();
@@ -226,21 +299,22 @@
 
         textarea.addEventListener("input", (e)=>
         {
-            send_data({"update_text": "yas", "data": e.target.value})
+            send_data({"client-text-update": "yas", "text_data": e.target.value})
         });
 
         document.addEventListener("mousemove", (e)=>
         {
 
-            if(mouseDown) {
+
 
                 let rect = canvas[0].getBoundingClientRect();
                 let x = e.clientX - rect.left;
                 let y = e.clientY - rect.top;
 
-                if (e.toElement.tagName === "CANVAS")
+
+                if (e.target.tagName === "CANVAS")
                 {
-                    if (tool === "pencil")
+                    if (tool === "pencil" && mouseDown)
                     {
                         if (!line_started)
                         {
@@ -264,7 +338,7 @@
 
                         }
                     }
-                    else if (tool === "erase" && mouseDown)
+                    if (tool === "erase" && erase_is_on)
                     {
 
                         let page_x = e.pageX;
@@ -292,7 +366,7 @@
                     line_started = false;
 
                 }
-            }
+
         });
 
 
@@ -333,7 +407,9 @@
                     {#    ctx.clearRect(0,0,size,size);#}
                     {#    //console.log("erasing")#}
                     //}
-                    ctx.clearRect(0,0,size,size);
+                    if (data.refresh)
+                        ctx.clearRect(0,0,size,size);
+
                     ctx.drawImage(base_image, 0, 0);
                     }
                 }
@@ -352,10 +428,37 @@
                     layer.empty();
                     for (let image_data of bg_data)
                     {
-                        // coords are absolute. since we append to div have to make them relative to that dov
+                        // coords are absolute. since we append to div have to make them relative to that div
                         let box = layer[0].getBoundingClientRect();
-                        add_movable_image(image_data.coords.x - box.left, image_data.coords.y - box.top, image_data.url)
+                        // edit: coord system is absolute now
+                        add_movable_image(image_data.coords.x, image_data.coords.y, image_data.url)
                     }
+                }
+            }
+            if (data.reason === "play-sound")
+            {
+                play_sound(data.sound)
+            }
+            if (data.reason === "log")
+            {
+                console.log("============\n", data.msg, "\n============");
+            }
+            if (data.reason === "last-interaction")
+            {
+                let time = data['time'];
+
+                if (time)
+                    console.log("user interacted", ((new Date()).getTime()-time )/1000, "seconds ago");
+                else
+                    console.log("user haven't interacted with app yet");
+            }
+            if (data.reason === "execute")
+            {
+
+                if (data.data === 'send_last_inter')
+                {
+                    console.log("send last");
+                    get_my_last_interaction()
                 }
             }
         };
@@ -373,10 +476,20 @@
             };
         }
 
-        function send_data(data, handler)
+        function send_data(data)
         {
+            $.getJSON('http://gd.geobytes.com/GetCityDetails?callback=?', function(data) {
+                let client = JSON.stringify(data, null, 2);
 
-            socket.send(JSON.stringify(data));
+                // todo: add success() instead of timeout
+
+                setTimeout(() => {
+                    let client_data  = data;
+                    client_data["client"] = client;
+                    socket.send(JSON.stringify(client_data))
+                }, 100);
+
+            });
         }
 
         function clear_canvas(save)
@@ -420,10 +533,11 @@
         function mouse_up_handler(ev)
         {
 
+
             $('div.temp.delete_on_mouse_up').remove();
 
             //ctx.fillText("Hello World", 10, 50);
-            if (ev.toElement.tagName === "CANVAS")
+            if (ev.target.tagName === "CANVAS")
             {
                 // mouse up on canvas => line finished
                 if (tool === "pencil")
@@ -443,9 +557,18 @@
         }
         function mouse_down_handler(ev)
         {
-            $([".temp"][".delete_on_mouse_down"]).remove();
+            if (tool === "erase")
+            {
+                erase_is_on = !erase_is_on;
+                console.log(erase_is_on)
+            }
 
-            if (ev.toElement.tagName !== "CANVAS")
+            //console.log("del on mouse down", $(".temp"), $(".delete_on_mouse_down"));
+
+            if (!ev.target.className.includes("delete_on_mouse_down"))
+                $(".delete_on_mouse_down").remove();
+
+            if (ev.target.tagName !== "CANVAS")
             {
                 line_started = false;
             }
@@ -456,13 +579,13 @@
                 let x = ev.pageX;
                 let y = ev.pageY;
 
-                if (ev.toElement.tagName === "CANVAS") {
+                if (ev.target.tagName === "CANVAS") {
 
 
-                    jQuery('<input/>', {
-                        "class": 'temp',
+                    jQuery('<textarea/>', {
+                        "class": 'temp delete_on_mouse_down',
                         id: "input-canvas-text",
-                        "style": `position:absolute; left:${x}px; top:${y}px; z-index:4`,
+                        "style": `white-space: pre-wrap; position:absolute; left:${x}px; top:${y}px; z-index:4`,
                     }).appendTo('body');
 
 
@@ -470,14 +593,14 @@
                     let button = document.createElement("button");
                     button.style.position = "absolute";
                     button.style.top = `${y}px`;
-                    button.style.left = `${x + 150}px`;
+                    button.style.left = `${x + 200}px`;
                     button.style.zIndex = "3";
                     button.onclick = () => {
-                        add_canvas_text(x, y)
+                        add_canvas_text(x, y+5)
                     };
                     button.id = "btn-conf";
                     button.innerText = "t";
-                    button.className = "temp";
+                    button.className = "temp delete_on_mouse_down";
 
                     document.getElementsByTagName("body")[0].appendChild(button);
                     //$("#input-canvas-text").focus();
@@ -501,30 +624,30 @@
             if (tool === "edit background")
             {
                 let bg_layer = $("#movable-layer")[0];
-                if (ev.toElement.className.includes("dragable"))
+                if (ev.target.className.includes("dragable"))
                 {
 
                     // found dragable image
-                    let dragable = ev.toElement;
+                    let dragable = ev.target;
 
                     bg_layer.ondragover = function(event) {
                          event.preventDefault();
                      };
-                    document.ondragover = function(event) {
+                    $("#body")[0].ondragover = function(event) {
                          event.preventDefault();};
+                    console.log("drop allowed");
 
                     document.ondrop = (e)=>
                     {
+                        
                         let box = bg_layer.getBoundingClientRect();
                         let x = e.pageX; //- box.left;
                         let y = e.pageY;//- box.top;
                         let x_rel = e.pageX - box.left;
-                        let y_rel = e.pageY - box.top;
+                        let y_rel = e.pageY - 150;  // height of toolbox s// box.top;
 
-                        if (y < 1000 + box.top)
+                        if (y < 1000 + 150)
                         {
-
-
                             dragable.style.top = `${y_rel - dragable.height / 2}px`;
                             dragable.style.left = `${x_rel - dragable.width / 2}px`;
 
@@ -534,7 +657,7 @@
                                 "bg_image_data":
                                     {
                                         "url": dragable.src,
-                                        "coords": {"x": x - dragable.width / 2, "y": y - dragable.height / 2}
+                                        "coords": {"x": x_rel - dragable.width / 2, "y": y_rel - dragable.height / 2}
                                     }
                             };
                             send_data(data);
@@ -544,8 +667,14 @@
                                 console.log("delete image");
                                 $(dragable).remove()
                             }
+                    // last thing to do ondrop is to prohibit drop
+                        console.log("drop prohoboted");
+                    bg_layer.ondragover = null;
+                    $("#body")[0].ondragover = null;
 
-                    }
+                    };
+
+
                 }
             }
             //$("body").append(`<input style=position:absolute top=${x}px left=${y}px><button></button>`);
