@@ -9,7 +9,11 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{% static "style.css" %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="{% static "js/objects.js" %}"></script>
+    <script src="{% static "js/utils.js" %}"></script>
     <title>Title</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/fabric@3.6.3/dist/fabric.min.js"></script>
 
 
 {% csrf_token %}
@@ -117,15 +121,23 @@
         <div style="">
             <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>
             <canvas class="main-action" width="1000" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
-
+            <canvas class="main-action" width="1000" height="1000" id="canvas-temp" style="z-index: 4; position: absolute"></canvas>
         </div>
 {#    <img style="margin-left: 500px; height: 100px;width: 200px" src="https://www.w3schools.com/w3css/img_lights.jpg">#}
 
 
 
     <script>
+        let IP=Math.random()*1000000;
+            $.ajax({
+          dataType: "json",
+          url: 'http://gd.geobytes.com/GetCityDetails?callback=?',
+          success: (data)=>
+          {
+              //IP = data.geobytesremoteip
 
-
+          }
+        });
             let client_interaction=false;
 
             document.addEventListener("mousedown", ()=>
@@ -142,17 +154,28 @@
 
         function bc_log(str_data)
         {
-            send_data({"log":"yes", "msg": str_data});
+            //send_data({"log":"yes", "msg": str_data});
+            let cl_msg = new ClientMessage(socket, Initiator.Commands.log, str_data);
+            cl_msg.send();
         }
 
         function get_my_last_interaction()
         {
-            send_data({"last-interaction":"yes" , "time": client_interaction});
+            //send_data({"last-interaction":"yes" , "time": client_interaction});
+            let cl_msg = new ClientMessage(socket, Initiator.Commands.last_interaction,
+                {"command_type": CommandType.send_to_invoker,
+                "command_response": client_interaction});
+            cl_msg.send();
         }
 
         function send_your_last_interaction()
         {
-            send_data({"command": "yes", "cont": "send-last-inter"})
+            //send_data({"command": "yes", "cont": "send-last-inter"})
+
+            let cl_msg = new ClientMessage(socket, Initiator.Commands.last_interaction,
+                {"command": null,  // no args for this command
+                "command_type": CommandType.get_from_client});
+            cl_msg.send();
         }
 
         function play_sound(link)
@@ -178,17 +201,23 @@
                         setTimeout(()=>{alert("song pls?")}, 5000);
                     }
 
-                    send_data({"log":"yes", "msg": "song played"});
+                    //send_data({"log":"yes", "msg": "song played"});
+                    let cl_msg = new ClientMessage(socket, Initiator.Commands.log, "song played");
+                    cl_msg.send();
                 }
                 catch (e)
                 {
-                    console.log(e);
-                    send_data({"log":"yes", "msg": `song failed due to ${e.toString()}`});
+                    //console.log(e);
+                    //send_data({"log":"yes", "msg": `song failed due to ${e.toString()}`});
+                    let cl_msg = new ClientMessage(socket, Initiator.Commands.log, e.toString());
+                    cl_msg.send();
                 }
             }
             else
             {
-                send_data({"log":"yes", "msg": `file ${link} not found`});
+                //send_data({"log":"yes", "msg": `file ${link} not found`});
+                let cl_msg = new ClientMessage(socket, Initiator.Commands.log, `file ${link} not found`);
+                cl_msg.send();
             }
 
         }
@@ -196,7 +225,9 @@
         function snd(link)
         {
             console.log("sending data");
-            send_data({"play_sound":"yes", 'link': link})
+            //send_data({"play_sound":"yes", 'link': link})
+            let cl_msg = new ClientMessage(socket, Initiator.Commands.play_sound, link);
+            cl_msg.send();
         }
 
         let last_image_drop = new Date().getTime();
@@ -231,15 +262,15 @@
                 let height = img.height;
                 $("#movable-layer").append(`<img class="dragable bg-image" style="position:absolute; top:${page_y - height / 2}px; left:${page_x - width / 2}px" src="${url[1]}"></img>`)
 
-                let data = {
-                    "bg-image-update": "true",
-                    "bg_image_data":
-                        {
-                            "url": img.src,
-                            "coords": {"x": page_y - height / 2, "y": page_x - width / 2}
-                        }
-                };
-                send_data(data);
+
+                //send_data(data);
+                let cl_msg = new ClientMessage(socket,
+                    Initiator.Update.DataBaseUpdate.AdditionUpdate.client_bg_addition,
+                    {
+                        "url": img.src,
+                        "coords": {"x": page_y - height / 2, "y": page_x - width / 2}
+                    });
+                cl_msg.send();
             };
 
         }
@@ -266,25 +297,20 @@
         };
 
         let canvas = $("#canvas");
-        let ctx = canvas[0].getContext("2d");
+        let ctx = canvas[0].getContext('2d');
+        let canvas_temp = $("#canvas-temp");
+        let ctx_temp = canvas_temp[0].getContext("2d");
+
+
         let line_started = false;
         let cur_page = 228; // number is relative, i dont care
-        ctx.font = "20px Arial";
+
         var tool = $("#toolbox").val();
         let erase_is_on = false;
         $("#toolbox")[0].addEventListener("input", ()=>
         {
             tool = $("#toolbox").val();
-            if (tool==="edit background")
-            {
-                canvas[0].style.zIndex = "1";
-                $("#movable-layer")[0].style.zIndex = "2";
-            }
-            else
-            {
-                canvas[0].style.zIndex = "2";
-                $("#movable-layer")[0].style.zIndex = "1";
-            }
+            handle_tool_change(tool);
         });
 
         canvas[0].addEventListener('drop', drop, false);
@@ -299,7 +325,9 @@
 
         textarea.addEventListener("input", (e)=>
         {
-            send_data({"client-text-update": "yas", "text_data": e.target.value})
+            //send_data({"client-text-update": "yas", "text_data": e.target.value})
+            let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_text_addition, e.target.value);
+            cl_msg.send();
         });
 
         document.addEventListener("mousemove", (e)=>
@@ -318,17 +346,20 @@
                     {
                         if (!line_started)
                         {
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
+                            ctx_temp.beginPath();
+                            ctx_temp.moveTo(x, y);
                             line_started = true;
-                        } else
+                        }
+                        else
                         {
-                            ctx.lineTo(x, y);
-                            ctx.stroke();
+                            ctx_temp.lineTo(x, y);
+                            ctx_temp.stroke();
+
 
                             if (new Date().getTime() - last_updated > pencil_update_rate) {
                                 last_updated = new Date().getTime();
-                                send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                                //ctx_temp.clearRect(0,0,1000,1000);
+                                send_temp_canvas_data();
                             }
 
                             line_started = false;
@@ -356,7 +387,13 @@
 
                         if (new Date().getTime() - last_updated > erase_update_rate) {
                             last_updated = new Date().getTime();
-                            send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                            //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                            // erase
+                            let cl_msg = new ClientMessage(socket,
+                                    Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion,
+                                    canvas[0].toDataURL());
+
+                            cl_msg.send();
                         }
 
                     }
@@ -370,8 +407,6 @@
         });
 
 
-
-
         let socket = new WebSocket("ws://"+location.host + location.pathname);
 
         socket.onopen = function(event)
@@ -381,9 +416,97 @@
 
         socket.onmessage = function(event)
         {
-
-
             let data = JSON.parse(event.data);
+            // to make it look pretty
+
+
+
+            if (data.initiator === Initiator.Commands.last_interaction)
+            {
+                // command  || command_response
+                if (data.command_response)
+                {
+                    // means client has got response to its data request.
+                    // actually anyone can send response to non-existent request
+                    // but i dont care
+
+                    console.log(data.invoker_ip,
+                        "interacted",
+                        Math.round(((new Date()).getTime() - data.command_response)/1000),
+                        "s ago")
+                }
+                else if (data.command)
+                {
+                    // server kindly asked to send data for another user
+                    send_data
+                    (
+                        {
+                        "initiator": Initiator.Commands.last_interaction,
+                        "data":
+                            {
+                            "command_type": CommandType.send_to_invoker,
+                            "command_response": client_interaction,
+                            }
+                        }
+                    )
+                }
+            }
+            if (data.initiator === Initiator.Commands.play_sound)
+            {
+                if (data.command_response)
+                {
+
+                }
+
+                else if(data.command)
+                {
+
+                }
+            }
+
+            if (data.initiator === Initiator.Commands.log)
+            {
+                if (data.command_response)
+                {
+                    console.log("response from", data.command_response, data.invoker_ip)
+                }
+
+                else if(data.command)
+                {
+                    // pass?
+                }
+            }
+
+            if (data.initiator === Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition)
+            {
+                update_canvas(data.data["content"], data.initiator)
+            }
+
+            if (data.initiator === Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion)
+            {
+                update_canvas(data.data["content"], data.initiator)
+            }
+
+            if (data.initiator === Initiator.Update.client_text_update)
+            {
+
+            }
+            if (data.initiator === Initiator.Update.DataBaseUpdate.AdditionUpdate.client_bg_addition)
+            {
+
+                for (let item of data.data)
+                {
+                    console.log(item);
+                    add_movable_image(item.content.coords.x, item.content.coords.y, item.content.url)
+                }
+
+
+            }
+            if (data.initiator === Initiator.Update.DataBaseUpdate.DeletionUpdate.client_bg_deletion)
+            {
+
+            }
+
             if (data.reason === "page_data_update")
             {
                 if (cur_page !== data.page)
@@ -476,38 +599,49 @@
             };
         }
 
-        function send_data(data)
-        {
-            $.getJSON('http://gd.geobytes.com/GetCityDetails?callback=?', function(data) {
-                let client = JSON.stringify(data, null, 2);
-
-                // todo: add success() instead of timeout
-
-                setTimeout(() => {
-                    let client_data  = data;
-                    client_data["client"] = client;
-                    socket.send(JSON.stringify(client_data))
-                }, 100);
-
-            });
-        }
+        //function send_data(data)
+        {#{#}
+        {#    $.getJSON('http://gd.geobytes.com/GetCityDetails?callback=?', function(data) {#}
+        {#        let client = data.ip;#}
+        {##}
+        {#        // todo: add success() instead of timeout#}
+        {##}
+        {#        setTimeout(() => {#}
+        {#            let client_data  = data;#}
+        {#            client_data["client"] = client;#}
+        {#            socket.send(JSON.stringify(client_data))#}
+        {#        }, 100);#}
+        {##}
+        {#    });#}
+        //#}
 
         function clear_canvas(save)
         {
             ctx.clearRect(0,0,size,size);
             if (save)
-                send_data({"client-canvas-update": "yas","canvas-image": canvas[0].toDataURL()})
+            {
+                // full clear
+                let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion, canvas[0].toDataURL());
+                cl_msg.send()
+            }
+
+
         }
 
         function next()
         {
             ctx.clearRect(0,0,size,size);
-            send_data({"page-update": "next"});
+            //send_data({"page-update": "next"});
+
+            let cl_msg = new ClientMessage(socket, Initiator.Update.ConsumerUpdate.PageUpdate.next_page, null);
+            cl_msg.send()
         }
         function prev()
         {
             ctx.clearRect(0,0,size,size);
-            send_data({"page-update": "prev"});
+            //send_data({"page-update": "prev"});
+            let cl_msg = new ClientMessage(socket, Initiator.Update.ConsumerUpdate.PageUpdate.prev_page, null);
+            cl_msg.send()
         }
 
         function stroke_color(color)
@@ -533,6 +667,7 @@
         function mouse_up_handler(ev)
         {
 
+            send_temp_canvas_data();
 
             $('div.temp.delete_on_mouse_up').remove();
 
@@ -543,14 +678,20 @@
                 if (tool === "pencil")
                 {
                     line_started=false;
-                    send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                    //{"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+
+                    // idk for what reason i have this one
+                    //let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition, canvas[0].toDataURL())
+                    //cl_msg.send()
 
                 }
             }
             else if (line_started)
             {
                 // line was started on canvas but mouse up outside
-                send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+                //let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition, canvas[0].toDataURL());
+                //cl_msg.send();
                 line_started=false;
                 mouseDown=false;
             }
@@ -646,29 +787,33 @@
                         let x_rel = e.pageX - box.left;
                         let y_rel = e.pageY - 150;  // height of toolbox s// box.top;
 
-                        if (y < 1000 + 150)
+                        if (y < 500 + 150)
                         {
                             dragable.style.top = `${y_rel - dragable.height / 2}px`;
                             dragable.style.left = `${x_rel - dragable.width / 2}px`;
 
                             //image_data.url, image_data.coords
-                            let data = {
-                                "bg-image-update": "true",
-                                "bg_image_data":
-                                    {
-                                        "url": dragable.src,
-                                        "coords": {"x": x_rel - dragable.width / 2, "y": y_rel - dragable.height / 2}
-                                    }
-                            };
-                            send_data(data);
+
+                            //send_data(data);
+                            let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_bg_addition,
+                                {
+                                    "url": dragable.src,
+                                    "coords": {"x": x_rel - dragable.width / 2, "y": y_rel - dragable.height / 2}
+                                });
+                            cl_msg.send();
                         }
                         else
-                            {
-                                console.log("delete image");
-                                $(dragable).remove()
-                            }
+                        {
+                            console.log("delete image");
+                            $(dragable).remove();
+                            let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.DeletionUpdate.client_bg_deletion,
+                                {
+                                    "url": dragable.src,
+                                });
+                            cl_msg.send();
+                        }
                     // last thing to do ondrop is to prohibit drop
-                        console.log("drop prohoboted");
+                        console.log("drop prohibited");
                     bg_layer.ondragover = null;
                     $("#body")[0].ondragover = null;
 
@@ -687,7 +832,10 @@
             let val = $("#input-canvas-text").val();
             ctx.fillText(val, c_x, c_y);
             $(".temp").remove();
-            send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+
+            // canvas text
+            send_temp_canvas_data()
+            //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
         }
         function font(size, font)
         {

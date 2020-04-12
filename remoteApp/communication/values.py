@@ -1,15 +1,36 @@
-"""
+""" тут столько оберток,
+что если протянуть их вокруг земного шара,
+то толщина объектно-ориентированного слоя достанет до луны """
 
 
+class AdditionUpdate:
+    client_canvas_update = "client_canvas_addition"
+    client_text_update = "client_text_addition"
+    client_bg_update = "client_bg_addition"
 
-"""
+
+class DeletionUpdate:
+    client_canvas_update = "client_canvas_delete"
+    client_text_update = "client_text_delete"
+    client_bg_delete = "client_bg_delete"
+
+
+class DataBaseUpdate:
+    AdditionUpdate = AdditionUpdate
+    DeletionUpdate = DeletionUpdate
+
+class PageUpdate:
+    next_page = "next_page"
+    prev_page = "prev_page"
+
+
+class ConsumerUpdate:
+    PageUpdate = PageUpdate
 
 
 class Update:
-
-    client_canvas_update = "client_canvas_update"
-    client_text_update = "client_text_update"
-    client_bg_update = "client_bg_update"
+    DataBaseUpdate = DataBaseUpdate
+    ConsumerUpdate = ConsumerUpdate
 
 
 class CommandType:
@@ -20,6 +41,7 @@ class CommandType:
 class Commands:
     play_sound = "play_sound"
     last_interaction = "last_interaction"
+    log = "log"
 
 
 class Initiator:
@@ -29,13 +51,13 @@ class Initiator:
 
 class Field:
 
-    canvas = "canvas_image"
+    canvas = "canvas"
     text = "text"
-    bg = "bg_images"
+    bg = "bg"
 
     @staticmethod
     def __iter__():
-        return [p for p in dir(Field) if isinstance(getattr(Field, p), property)]
+        return ["canvas", "text", "bg"]
 
 
 

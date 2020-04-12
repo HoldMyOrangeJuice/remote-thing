@@ -23,3 +23,7 @@ canvas | data: {"url": url}
 text   | data: {"text": text}
 bg     | data: {"uuid": {"url": url, "coords":{"x": x, "y": y}}}
 
+
+TODO:
+replace {command_type: command_response: command: } in js with class
+
