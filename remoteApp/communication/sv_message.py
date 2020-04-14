@@ -2,8 +2,6 @@ import json
 from remoteApp.communication.values import Update
 from remoteApp.communication.Message import Message
 
-# ideas:
-# server message can send only one data( {a: b, c: d} ) type at once
 
 
 class ServerMessage(Message):
@@ -19,7 +17,7 @@ class ServerMessage(Message):
         self.except_consumer = except_consumer
 
     async def send(self):
-        print(self.consumers)
+
         for consumer in self.consumers:
             if consumer != self.except_consumer:
                 formatted_object = dict()

@@ -24,7 +24,7 @@ class Message:
 
     def updated_field(self):
         if self.is_addition() or self.is_deletion():
-            print("iterable fields", list(Field.__iter__()), self.initiator)
+
             for field in Field.__iter__():
                 if field in self.initiator:
                     return field

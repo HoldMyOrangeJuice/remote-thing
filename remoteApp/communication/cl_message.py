@@ -47,7 +47,7 @@ class ClientMessage(Message):
 
                 self.data = updated_data
 
-            print("updating data with", self.data, self.updated_field() )
+
             page.update_data(data=self.data, field=self.updated_field())
 
 

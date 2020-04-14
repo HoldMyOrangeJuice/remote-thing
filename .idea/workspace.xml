@@ -2,16 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b4492ae2-0988-4d5a-b49c-5408ed60c379" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/remoteApp/static/js/objects.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/profesionals_have_standarts.txt" beforeDir="false" afterPath="$PROJECT_DIR$/profesionals_have_standarts.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/remoteApp/communication/DataTypes.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/DataTypes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/communication/Message.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/Message.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/communication/Page.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/Page.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/communication/cl_message.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/cl_message.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/communication/sv_message.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/sv_message.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/remoteApp/communication/values.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/communication/values.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/consumers.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/consumers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/remoteApp/static/js/utils.js" beforeDir="false" afterPath="$PROJECT_DIR$/remoteApp/static/js/utils.js" afterDir="false" />
@@ -43,22 +40,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/remoteApp/communication/DataTypes.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="320">
-              <caret line="82" column="58" selection-start-line="82" selection-start-column="58" selection-end-line="82" selection-end-column="58" />
-              <folding>
-                <element signature="e#0#10#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/remoteApp/communication/cl_message.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="217">
-              <caret line="47" column="40" selection-start-line="47" selection-start-column="40" selection-end-line="47" selection-end-column="40" />
+            <state relative-caret-position="264">
+              <caret line="24" column="32" lean-forward="true" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -67,22 +52,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/remoteApp/communication/Page.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="151">
-              <caret line="26" selection-start-line="26" selection-end-line="26" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/remoteApp/communication/sv_message.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="264">
-              <caret line="21" column="29" selection-start-line="21" selection-start-column="29" selection-end-line="21" selection-end-column="29" />
+            <state relative-caret-position="166">
+              <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -93,7 +66,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/remoteApp/communication/values.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="151">
+            <state relative-caret-position="506">
               <caret line="23" column="6" selection-start-line="23" selection-start-column="4" selection-end-line="23" selection-end-column="6" />
             </state>
           </provider>
@@ -102,8 +75,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/remoteApp/communication/Message.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="145">
-              <caret line="25" column="52" selection-start-line="25" selection-start-column="52" selection-end-line="25" selection-end-column="52" />
+            <state relative-caret-position="506">
+              <caret line="26" selection-start-line="26" selection-end-line="26" />
               <folding>
                 <element signature="e#0#48#0" expanded="true" />
               </folding>
@@ -121,34 +94,52 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/templates/start_page.html">
+        <entry file="file://$PROJECT_DIR$/remoteApp/static/js/utils.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="239">
-              <caret line="670" selection-start-line="670" selection-end-line="670" />
+            <state relative-caret-position="1980">
+              <caret line="90" column="20" selection-start-line="86" selection-start-column="4" selection-end-line="90" selection-end-column="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/remoteApp/models.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="242">
+              <caret line="12" column="52" selection-start-line="12" selection-start-column="52" selection-end-line="12" selection-end-column="52" />
               <folding>
-                <element signature="e#4626#4664#0#HTML" expanded="true" />
+                <element signature="e#0#28#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/remoteApp/static/js/utils.js">
+        <entry file="file://$PROJECT_DIR$/remoteApp/consumers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="54" column="5" lean-forward="true" selection-start-line="54" selection-start-column="5" selection-end-line="54" selection-end-column="5" />
+            <state relative-caret-position="814">
+              <caret line="50" lean-forward="true" selection-start-line="50" selection-end-line="50" />
+              <folding>
+                <element signature="e#0#11#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/remoteApp/consumers.py">
+        <entry file="file://$PROJECT_DIR$/templates/start_page.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="156">
-              <caret line="37" column="100" selection-start-line="37" selection-start-column="100" selection-end-line="38" selection-end-column="42" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="9174">
+              <caret line="417" column="50" selection-start-line="417" selection-start-column="50" selection-end-line="417" selection-end-column="50" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/profesionals_have_standarts.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="459">
+              <caret line="37" column="82" selection-start-line="37" selection-start-column="82" selection-end-line="37" selection-end-column="82" />
             </state>
           </provider>
         </entry>
@@ -167,16 +158,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>all_cons</find>
-      <find>get_con</find>
-      <find>line_started</find>
-      <find>Update</find>
-      <find>cl_msg</find>
-      <find>&quot;canva</find>
-      <find>cons</find>
-      <find>is_update</find>
-      <find>onmesa</find>
-      <find>send</find>
       <find>initia</find>
       <find>draw</find>
       <find>update_ca</find>
@@ -188,15 +169,25 @@
       <find>client_canvas_addition</find>
       <find>Initiator</find>
       <find>deletion</find>
-      <find>print</find>
       <find>bg_deletion</find>
       <find>line_s</find>
       <find>toDataURL</find>
       <find>canvas_temp[0]</find>
-      <find>canvas_temp</find>
-      <find>get_parsed_bg_data</find>
-      <find>send_temp_canvas_data</find>
       <find>mouse_up_ha</find>
+      <find>get_parsed_bg_data</find>
+      <find>cons</find>
+      <find>send_temp_canvas_data</find>
+      <find>line sta</find>
+      <find>ctx_temp</find>
+      <find>canvas_temp</find>
+      <find>action</find>
+      <find>Action(</find>
+      <find>cl_msg</find>
+      <find>add_canvas_text</find>
+      <find>send_te</find>
+      <find>last_up</find>
+      <find>todata</find>
+      <find>print</find>
     </findStrings>
     <replaceStrings>
       <replace>add_page_data</replace>
@@ -222,18 +213,18 @@
         <option value="$PROJECT_DIR$/remoteApp/values.py" />
         <option value="$PROJECT_DIR$/remoteApp/cl_message.py" />
         <option value="$PROJECT_DIR$/remoteApp/sv_message.py" />
-        <option value="$PROJECT_DIR$/profesionals_have_standarts.txt" />
         <option value="$PROJECT_DIR$/remoteApp/communication/DataTypes.py" />
         <option value="$PROJECT_DIR$/remoteApp/communication/values.py" />
-        <option value="$PROJECT_DIR$/remoteApp/models.py" />
         <option value="$PROJECT_DIR$/remoteApp/static/js/objects.js" />
         <option value="$PROJECT_DIR$/remoteApp/communication/Message.py" />
-        <option value="$PROJECT_DIR$/remoteApp/communication/sv_message.py" />
         <option value="$PROJECT_DIR$/remoteApp/communication/Page.py" />
-        <option value="$PROJECT_DIR$/remoteApp/consumers.py" />
         <option value="$PROJECT_DIR$/remoteApp/communication/cl_message.py" />
-        <option value="$PROJECT_DIR$/templates/start_page.html" />
+        <option value="$PROJECT_DIR$/remoteApp/models.py" />
         <option value="$PROJECT_DIR$/remoteApp/static/js/utils.js" />
+        <option value="$PROJECT_DIR$/templates/start_page.html" />
+        <option value="$PROJECT_DIR$/profesionals_have_standarts.txt" />
+        <option value="$PROJECT_DIR$/remoteApp/communication/sv_message.py" />
+        <option value="$PROJECT_DIR$/remoteApp/consumers.py" />
       </list>
     </option>
   </component>
@@ -359,18 +350,20 @@
       <workItem from="1586508125325" duration="19241000" />
       <workItem from="1586592678330" duration="5272000" />
       <workItem from="1586601225088" duration="1595000" />
-      <workItem from="1586695262234" duration="17889000" />
+      <workItem from="1586695262234" duration="19584000" />
+      <workItem from="1586761484622" duration="7328000" />
+      <workItem from="1586880675417" duration="492000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="158859000" />
+    <option name="totallyTimeSpent" value="168374000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.20622987" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21213749" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -384,7 +377,7 @@
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="11" visible="true" weight="0.37472036" />
+      <window_info anchor="bottom" id="Terminal" order="11" visible="true" weight="0.37472036" />
       <window_info anchor="bottom" id="Python Console" order="12" weight="0.32885906" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -443,13 +436,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/profesionals_have_standarts.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="594">
-          <caret line="27" column="68" selection-start-line="27" selection-start-column="68" selection-end-line="27" selection-end-column="68" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/remoteApp/views.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="481">
@@ -460,30 +446,30 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/remoteApp/models.py">
+    <entry file="file://$PROJECT_DIR$/remoteApp/communication/DataTypes.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="9" column="10" selection-start-line="9" selection-start-column="10" selection-end-line="9" selection-end-column="10" />
+        <state relative-caret-position="1738">
+          <caret line="82" column="58" selection-start-line="82" selection-start-column="58" selection-end-line="82" selection-end-column="58" />
           <folding>
-            <element signature="e#0#28#0" expanded="true" />
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/remoteApp/communication/Page.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="440">
+          <caret line="21" column="11" selection-start-line="21" selection-start-column="11" selection-end-line="21" selection-end-column="35" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/remoteApp/communication/values.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="151">
+        <state relative-caret-position="506">
           <caret line="23" column="6" selection-start-line="23" selection-start-column="4" selection-end-line="23" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/remoteApp/communication/Message.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="145">
-          <caret line="25" column="52" selection-start-line="25" selection-start-column="52" selection-end-line="25" selection-end-column="52" />
-          <folding>
-            <element signature="e#0#48#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -494,40 +480,61 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/remoteApp/communication/DataTypes.py">
+    <entry file="file://$PROJECT_DIR$/remoteApp/static/js/utils.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="320">
-          <caret line="82" column="58" selection-start-line="82" selection-start-column="58" selection-end-line="82" selection-end-column="58" />
+        <state relative-caret-position="1980">
+          <caret line="90" column="20" selection-start-line="86" selection-start-column="4" selection-end-line="90" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/start_page.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9174">
+          <caret line="417" column="50" selection-start-line="417" selection-start-column="50" selection-end-line="417" selection-end-column="50" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/profesionals_have_standarts.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="37" column="82" selection-start-line="37" selection-start-column="82" selection-end-line="37" selection-end-column="82" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/remoteApp/models.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="242">
+          <caret line="12" column="52" selection-start-line="12" selection-start-column="52" selection-end-line="12" selection-end-column="52" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/remoteApp/communication/Message.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="506">
+          <caret line="26" selection-start-line="26" selection-end-line="26" />
+          <folding>
+            <element signature="e#0#48#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/remoteApp/communication/sv_message.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="21" column="29" selection-start-line="21" selection-start-column="29" selection-end-line="21" selection-end-column="29" />
+        <state relative-caret-position="166">
+          <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/remoteApp/communication/Page.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="151">
-          <caret line="26" selection-start-line="26" selection-end-line="26" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/remoteApp/communication/cl_message.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="217">
-          <caret line="47" column="40" selection-start-line="47" selection-start-column="40" selection-end-line="47" selection-end-column="40" />
+        <state relative-caret-position="264">
+          <caret line="24" column="32" lean-forward="true" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -536,28 +543,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/remoteApp/consumers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="156">
-          <caret line="37" column="100" selection-start-line="37" selection-start-column="100" selection-end-line="38" selection-end-column="42" />
+        <state relative-caret-position="814">
+          <caret line="50" lean-forward="true" selection-start-line="50" selection-end-line="50" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/templates/start_page.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="239">
-          <caret line="670" selection-start-line="670" selection-end-line="670" />
-          <folding>
-            <element signature="e#4626#4664#0#HTML" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/remoteApp/static/js/utils.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="54" column="5" lean-forward="true" selection-start-line="54" selection-start-column="5" selection-end-line="54" selection-end-column="5" />
         </state>
       </provider>
     </entry>

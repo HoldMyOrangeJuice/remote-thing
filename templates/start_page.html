@@ -121,7 +121,7 @@
         <div style="">
             <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>
             <canvas class="main-action" width="1000" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
-            <canvas class="main-action" width="1000" height="1000" id="canvas-temp" style="z-index: 4; position: absolute"></canvas>
+            <canvas class="main-action" width="1000" height="1000" id="canvas-temp" style="margin-left: 60px; z-index: 4; position: absolute"></canvas>
         </div>
 {#    <img style="margin-left: 500px; height: 100px;width: 200px" src="https://www.w3schools.com/w3css/img_lights.jpg">#}
 
@@ -155,7 +155,7 @@
         function bc_log(str_data)
         {
             //send_data({"log":"yes", "msg": str_data});
-            let cl_msg = new ClientMessage(socket, Initiator.Commands.log, str_data);
+            let cl_msg = new ClientMessage(socket, Initiator.Commands.log, str_data, null);
             cl_msg.send();
         }
 
@@ -164,7 +164,8 @@
             //send_data({"last-interaction":"yes" , "time": client_interaction});
             let cl_msg = new ClientMessage(socket, Initiator.Commands.last_interaction,
                 {"command_type": CommandType.send_to_invoker,
-                "command_response": client_interaction});
+                "command_response": client_interaction},
+                null);
             cl_msg.send();
         }
 
@@ -174,7 +175,8 @@
 
             let cl_msg = new ClientMessage(socket, Initiator.Commands.last_interaction,
                 {"command": null,  // no args for this command
-                "command_type": CommandType.get_from_client});
+                "command_type": CommandType.get_from_client},
+                null);
             cl_msg.send();
         }
 
@@ -202,21 +204,31 @@
                     }
 
                     //send_data({"log":"yes", "msg": "song played"});
-                    let cl_msg = new ClientMessage(socket, Initiator.Commands.log, "song played");
+                    let cl_msg = new ClientMessage(socket,
+                        Initiator.Commands.log,
+                        "song played",
+                        null);
                     cl_msg.send();
                 }
                 catch (e)
                 {
                     //console.log(e);
                     //send_data({"log":"yes", "msg": `song failed due to ${e.toString()}`});
-                    let cl_msg = new ClientMessage(socket, Initiator.Commands.log, e.toString());
+                    let cl_msg = new ClientMessage(
+                        socket,
+                        Initiator.Commands.log,
+                        e.toString(),
+                        null);
                     cl_msg.send();
                 }
             }
             else
             {
                 //send_data({"log":"yes", "msg": `file ${link} not found`});
-                let cl_msg = new ClientMessage(socket, Initiator.Commands.log, `file ${link} not found`);
+                let cl_msg = new ClientMessage(socket,
+                    Initiator.Commands.log,
+                    `file ${link} not found`,
+                    null);
                 cl_msg.send();
             }
 
@@ -226,7 +238,10 @@
         {
             console.log("sending data");
             //send_data({"play_sound":"yes", 'link': link})
-            let cl_msg = new ClientMessage(socket, Initiator.Commands.play_sound, link);
+            let cl_msg = new ClientMessage(socket,
+                Initiator.Commands.play_sound,
+                link,
+                null);
             cl_msg.send();
         }
 
@@ -269,7 +284,8 @@
                     {
                         "url": img.src,
                         "coords": {"x": page_y - height / 2, "y": page_x - width / 2}
-                    });
+                    },
+                    null);
                 cl_msg.send();
             };
 
@@ -298,8 +314,8 @@
 
         let canvas = $("#canvas");
         let ctx = canvas[0].getContext('2d');
-        let canvas_temp = $("#canvas-temp");
-        let ctx_temp = canvas_temp[0].getContext("2d");
+
+
 
 
         let line_started = false;
@@ -346,26 +362,33 @@
                     {
                         if (!line_started)
                         {
-                            ctx_temp.beginPath();
-                            ctx_temp.moveTo(x, y);
-                            line_started = true;
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            line_started = {"x":x, "y":y};
+                            //console.log("line started at", x, y)
                         }
                         else
                         {
-                            ctx_temp.lineTo(x, y);
-                            ctx_temp.stroke();
+                            ctx.lineTo(x, y);
+                            ctx.stroke();
+                            //console.log("line finished at", x, y);
 
 
-                            if (new Date().getTime() - last_updated > pencil_update_rate) {
+                            if (new Date().getTime() - last_updated > pencil_update_rate || true)
+                            {
                                 last_updated = new Date().getTime();
-                                //ctx_temp.clearRect(0,0,1000,1000);
-                                send_temp_canvas_data();
+                                let cl_msg = new ClientMessage(socket,
+                                    Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition,
+                                    "base64",
+                                    {"x0":line_started.x, "y0":line_started.y, "x1":x, "y1":y});
+                                cl_msg.send();
                             }
 
                             line_started = false;
                             ctx.beginPath();
                             ctx.moveTo(x, y);
-                            line_started = true;
+                            //console.log("line_ started at", x, y);
+                            line_started = {"x":x, "y":y};
 
                         }
                     }
@@ -391,7 +414,8 @@
                             // erase
                             let cl_msg = new ClientMessage(socket,
                                     Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion,
-                                    canvas[0].toDataURL());
+                                    "base64",
+                                    {"x":x, "y":y, "w":20, "h":20});
 
                             cl_msg.send();
                         }
@@ -621,7 +645,10 @@
             if (save)
             {
                 // full clear
-                let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion, canvas[0].toDataURL());
+                let cl_msg = new ClientMessage(socket,
+                    Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion,
+                    "base64",
+                    {"x":0, "y":0, "w":1000, "h":1000});
                 cl_msg.send()
             }
 
@@ -667,7 +694,7 @@
         function mouse_up_handler(ev)
         {
 
-            send_temp_canvas_data();
+
 
             $('div.temp.delete_on_mouse_up').remove();
 
@@ -701,7 +728,6 @@
             if (tool === "erase")
             {
                 erase_is_on = !erase_is_on;
-                console.log(erase_is_on)
             }
 
             //console.log("del on mouse down", $(".temp"), $(".delete_on_mouse_down"));
@@ -737,7 +763,7 @@
                     button.style.left = `${x + 200}px`;
                     button.style.zIndex = "3";
                     button.onclick = () => {
-                        add_canvas_text(x, y+5)
+                        add_canvas_text(x, y+5, $("#input-canvas-text").val())
                     };
                     button.id = "btn-conf";
                     button.innerText = "t";
@@ -799,17 +825,22 @@
                                 {
                                     "url": dragable.src,
                                     "coords": {"x": x_rel - dragable.width / 2, "y": y_rel - dragable.height / 2}
-                                });
+                                },
+                            null);
                             cl_msg.send();
                         }
                         else
                         {
                             console.log("delete image");
                             $(dragable).remove();
+
+
+
                             let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.DeletionUpdate.client_bg_deletion,
                                 {
                                     "url": dragable.src,
-                                });
+                                },
+                                null);
                             cl_msg.send();
                         }
                     // last thing to do ondrop is to prohibit drop
@@ -824,17 +855,21 @@
             }
             //$("body").append(`<input style=position:absolute top=${x}px left=${y}px><button></button>`);
         }
-        function add_canvas_text(x, y)
+        function add_canvas_text(x, y, val)
         {
             let box = canvas[0].getBoundingClientRect();
             let c_x = x - box.left;
             let c_y = y - box.top;
-            let val = $("#input-canvas-text").val();
+
             ctx.fillText(val, c_x, c_y);
             $(".temp").remove();
 
             // canvas text
-            send_temp_canvas_data()
+            let cl_msg = new ClientMessage(socket,
+            Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition,
+            "base64",
+                {"canvas_text": val, "x":x, "y":y});
+            cl_msg.send();
             //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
         }
         function font(size, font)

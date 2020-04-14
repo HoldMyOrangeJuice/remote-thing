@@ -22,10 +22,10 @@ class Page:
             print("no field found")
             return
 
-        print(page)
+
         #setattr(page, field, data)
         exec(f"page.update({field}={data})")
-        print("SAVED")
+
         # not sure if it is necessary
 
 

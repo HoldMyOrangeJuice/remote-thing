@@ -10,10 +10,6 @@ from remoteApp.communication.cl_message import ClientMessage
 from remoteApp.communication.values import Update, Field, Initiator
 
 
-# {initiator: page_data_update, data: text_data, page}
-
-# ip: consumer class
-
 class Consumer(AsyncConsumer):
 
     consumers = {}
@@ -62,7 +58,7 @@ class Consumer(AsyncConsumer):
         client_msg = ClientMessage(event.get("text"))
 
         Consumer.consumers[client_msg.ip] = self
-        print("added consumer with ip of", client_msg.ip)
+
 
         if client_msg.is_addition() or client_msg.is_deletion():
 
@@ -173,12 +169,12 @@ class Consumer(AsyncConsumer):
             self.add_page_data(field=msg.updated_field, data=msg.data, page_index=self.current_page)
 
     def get_consumers(self):
-        print("getting consumers", list(Consumer.consumers.values()))
+
         return list(Consumer.consumers.values())
     # call this func only if cl_msg.is_update()
 
     async def send_update_to_consumers(self, cl_msg):
-        print("send updates to consumers")
+
         sv_msg = ServerMessage(initiator= cl_msg.initiator,
                                all_consumers= self.get_consumers(),
                                except_consumer=self, # None cuz i have same id should be self

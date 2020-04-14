@@ -1,11 +1,14 @@
 class ClientMessage
 {
-    constructor(socket, initiator, data)
+    constructor(socket, initiator, data, action)
     {
         this.socket = socket;
         this.initiator = initiator;
         this.data = {};
         this.data["content"] = data;
+        let action_obj = {};
+        action_obj[initiator] = action;
+        this.data["action"] = action_obj;
         console.log(this.data)
     }
 
@@ -18,6 +21,24 @@ class ClientMessage
                 "client": IP}))
 
     }
+}
+
+class Action
+{
+    constructor(initiator, data)
+    {
+        this.i = initiator;
+        this.d = data;
+    }
+    dump()
+    {
+        let init = this.i;
+        let o = {};
+        o[init] = this.d;
+        return o
+    }
+
+
 }
 
 function handle_tool_change(tool)
@@ -61,19 +82,18 @@ function update_canvas(data, initiator)
     }
 }
 
-function send_temp_canvas_data()
+function send_canvas_update(initiator, action)
 {
-    ctx.drawImage(canvas_temp[0], 0, 0);
-
-    ctx_temp.clearRect(0,0, 1000,1000);
-    console.log("clear all now saved lines");
-
     let cl_msg = new ClientMessage(socket,
-        Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition,
-        canvas[0].toDataURL());
-    cl_msg.send();
+        initiator,
+        canvas[0].toDataURL(),
+        action);
+    //cl_msg.send();
 
 }
+
+//{"context":{"erase":{x:x, y:y, w:w, h:h}}}
+//{"context":{"draw":{x:x, y:y, x:x, y:y}}}
 
 
 

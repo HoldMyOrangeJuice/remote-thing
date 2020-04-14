@@ -10,6 +10,7 @@ class PageData(models.Model):
     canvas = jsonfield.JSONField(default={})
     text = jsonfield.JSONField(default={})
     bg = jsonfield.JSONField(default=[])
+    action_pattern = jsonfield.JSONField(default=[])
 
 
 
