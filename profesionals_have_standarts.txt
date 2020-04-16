@@ -27,3 +27,6 @@ bg     | data: {"uuid": {"url": url, "coords":{"x": x, "y": y}}}
 TODO:
 replace {command_type: command_response: command: } in js with class
 
+protocol 2.0
+
+data from client text:{"client":ip, "actions":[{"line":{}}, {line:{}}, {erase:{}}, {}] }

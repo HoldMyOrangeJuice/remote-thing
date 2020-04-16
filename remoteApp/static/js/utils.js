@@ -1,45 +1,24 @@
 class ClientMessage
 {
-    constructor(socket, initiator, data, action)
+    constructor(socket, data)
     {
         this.socket = socket;
-        this.initiator = initiator;
-        this.data = {};
-        this.data["content"] = data;
-        let action_obj = {};
-        action_obj[initiator] = action;
-        this.data["action"] = action_obj;
-        console.log(this.data)
+        this.data = data;
+        QUEUE.add(this);
     }
 
-    send()
-    {
 
-        this.socket.send(JSON.stringify({
-                "initiator": this.initiator,
-                "data": this.data ,
-                "client": IP}))
-
-    }
 }
 
-class Action
+setInterval(()=>
 {
-    constructor(initiator, data)
-    {
-        this.i = initiator;
-        this.d = data;
-    }
-    dump()
-    {
-        let init = this.i;
-        let o = {};
-        o[init] = this.d;
-        return o
-    }
 
-
-}
+    if (QUEUE.length > 0)
+    {
+        socket.send(JSON.stringify({"actions": QUEUE, "client": IP}));
+        QUEUE = [];
+    }
+}, 1000);
 
 function handle_tool_change(tool)
 {
@@ -47,55 +26,80 @@ function handle_tool_change(tool)
     {
 
         case "erase":
-            $("#canvas")[0].style.zIndex = "4";
-            $("#canvas-temp")[0].style.zIndex = "3";
-            $("#movable-layer")[0].style.zIndex = "2";
+            $(".movable_image").addClass("bottom");
+            $(".movable_image").removeClass("top");
             break;
         case "pencil" || "text":
-            $("#canvas")[0].style.zIndex = "3";
-            $("#canvas-temp")[0].style.zIndex = "4";
-            $("#movable-layer")[0].style.zIndex = "2";
+            $(".movable_image").addClass("bottom");
+            $(".movable_image").removeClass("top");
             break;
         case "edit background":
-            $("#canvas")[0].style.zIndex = "2";
-            $("#canvas-temp")[0].style.zIndex = "3";
-            $("#movable-layer")[0].style.zIndex = "4";
+            $(".movable_image").addClass("top");
+            $(".movable_image").removeClass("bottom");
             break;
 
     }
 }
 
-function update_canvas(data, initiator)
-{
-    console.log(data);
+let x_min_ignored_dist = 30;
+let y_min_ignored_dist = 30;
+let ignored_line_dist = 50;
 
-    console.log("drawing");
-    let img = new Image();
-    img.src = data;
-    img.onload = ()=>
+function push_line_coords_to_queue(x0, y0, x1, y1, color)
+{
+
+
+
+    if (QUEUE.length > 0)
     {
-        if (Initiator.Update.DataBaseUpdate.DeletionUpdate.client_canvas_deletion === initiator)
+        for (let i = QUEUE.length - 1; i >= 0; i--)
+    {
+	    let action = QUEUE[i];
+        if (action.line)
         {
-            ctx.clearRect(0,0,1000,1000)
+            if (Math.abs(action.line.x0 - x1) < x_min_ignored_dist &&
+                Math.abs(action.line.y0 - y1) < y_min_ignored_dist &&
+                dist(action.line.x0, action.line.y0, action.line.x1, action.line.y1) < ignored_line_dist &&
+                dist(x0, y0, x1, y1) < ignored_line_dist &&
+                action.line.x1 === x0 && action.line.y1 === y0)
+
+            {
+                action.line.x1 = x1;
+                action.line.y1 = y1;
+            }
+            else
+            {
+                QUEUE.push({"line":{
+                    "x0":Math.round(x0),
+                    "y0":Math.round(y0),
+                    "x1":Math.round(x1),
+                    "y1":Math.round(y1),
+                    "c":color
+                    }
+                })
+            }
+            break;
         }
-        ctx.drawImage(img, 0, 0);
     }
+
+    }
+    else
+    {
+        QUEUE.push({"line":{
+                "x0":Math.round(x0),
+                "y0":Math.round(y0),
+                "x1":Math.round(x1),
+                "y1":Math.round(y1),
+                "c":color
+                }
+            })
+    }
+
 }
 
-function send_canvas_update(initiator, action)
-{
-    let cl_msg = new ClientMessage(socket,
-        initiator,
-        canvas[0].toDataURL(),
-        action);
-    //cl_msg.send();
-
+function dist(x0, y0, x1, y1) {
+    return Math.sqrt(Math.pow(y1-y0, 2) + Math.pow(x1-x0, 2))
 }
-
-//{"context":{"erase":{x:x, y:y, w:w, h:h}}}
-//{"context":{"draw":{x:x, y:y, x:x, y:y}}}
-
-
 
 
 

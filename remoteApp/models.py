@@ -6,11 +6,7 @@ import jsonfield
 
 class PageData(models.Model):
     page = models.IntegerField(unique=True)
-
-    canvas = jsonfield.JSONField(default={})
-    text = jsonfield.JSONField(default={})
-    bg = jsonfield.JSONField(default=[])
-    action_pattern = jsonfield.JSONField(default=[])
+    actions = jsonfield.JSONField(default=[])
 
 
 
