@@ -74,6 +74,7 @@ let ctx = canvas[0].getContext('2d');
 
 
 let line_started = false;
+let line_continued = false;
 let cur_page = 228; // number is relative, i dont care
 
 var tool = $("#toolbox").val();
@@ -117,21 +118,13 @@ document.addEventListener("mousemove", (e)=>
     {
         if (!line_started)
         {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
             line_started = {"x":x, "y":y};
         }
         else
         {
-            ctx.lineTo(x, y);
-            ctx.stroke();
-
-            push_line_coords_to_queue(line_started.x, line_started.y, x, y, ctx.strokeStyle)
-
+            draw_line(line_started.x, line_started.y, x, y, ctx.strokeStyle, true);
             line_started = false;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            //console.log("line_ started at", x, y);
+            line_continued = false;
             line_started = {"x":x, "y":y};
         }
     }
@@ -150,8 +143,14 @@ document.addEventListener("mousemove", (e)=>
         else
         {
             jQuery('<div></div>', {
-                "class": 'temp delete_on_mouse_up',
-                "style": `position:absolute; left:${page_x - eraser_thickness/2}px; top:${page_y - eraser_thickness/2}px; width:${eraser_thickness}px; height:${eraser_thickness}px; border: 1px black solid;`,
+                "class": 'temp delete_on_mouse_up noSelect',
+                "style": `position:absolute; 
+                left:${page_x - eraser_thickness/2}px; 
+                top:${page_y - eraser_thickness/2}px; 
+                width:${eraser_thickness}px; 
+                height:${eraser_thickness}px; 
+                border: 1px black solid;
+                z-index: 4`,
             }).appendTo('body');
         }
 
@@ -163,6 +162,7 @@ document.addEventListener("mousemove", (e)=>
         if (e.target.id !== "canvas")
         {
             line_started = false;
+            line_continued = false;
         }
 
 });
@@ -191,7 +191,12 @@ socket.onmessage = function(event) {
 
         if (action.line) {
 
-            draw_line(action.line.x0, action.line.y0, action.line.x1, action.line.y1, action.line.c);
+            draw_line(action.line.x0,
+                action.line.y0,
+                action.line.x1,
+                action.line.y1,
+                action.line.c,
+                false);
         }
         if (action.erase) {
             erase(action.erase.x, action.erase.y, action.erase.thick);
@@ -215,7 +220,7 @@ socket.onmessage = function(event) {
         }
         if (action.draw_text)
         {
-            add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text);
+            add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text, 0, action.draw_text.font, false);
         }
 
         if (action.command) {
@@ -284,6 +289,7 @@ function mouse_up_handler(ev)
         if (tool === "pencil")
         {
             line_started=false;
+            line_continued=false;
             //{"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
 
             // idk for what reason i have this one
@@ -299,6 +305,7 @@ function mouse_up_handler(ev)
         //let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition, canvas[0].toDataURL());
         //cl_msg.send();
         line_started=false;
+        line_continued=false;
         mouseDown=false;
     }
 }
@@ -320,6 +327,7 @@ function mouse_down_handler(ev)
     if (ev.target.tagName !== "CANVAS")
     {
         line_started = false;
+        line_continued=false;
     }
 
     if (tool === "text") {
@@ -327,6 +335,8 @@ function mouse_down_handler(ev)
 
         let x = ev.pageX;
         let y = ev.pageY;
+        let scrollX = window.scrollX;
+        let scrollY = window.scrollY;
 
         if (ev.target.tagName === "CANVAS") {
 
@@ -347,11 +357,11 @@ function mouse_down_handler(ev)
             button.onclick = () => {
                 for (const [index, element] of $("#input-canvas-text").val().split("\n").entries())
                 {
-                    add_canvas_text(x-window.scrollX-(parseInt(ctx.font)/4), y+(index*parseInt(ctx.font))-window.scrollY+(parseInt(ctx.font)/4), element)
-                    QUEUE.push({"draw_text":{"x":x-window.scrollX-(parseInt(ctx.font)/4),
-                            "y":y+(index*parseInt(ctx.font))-window.scrollY+(parseInt(ctx.font)/4),
-                            "text": element
-                        }})
+                    console.log("page x is", x, "page y is", y, "scroll x is", scrollX, "scrollY", scrollY);
+                    add_canvas_text(x-scrollX-(parseInt(ctx.font)/4),
+                        y+(index*parseInt(ctx.font))-scrollY+(parseInt(ctx.font)/4),
+                        element, index, ctx.font, true);
+
                 }
 
 
@@ -382,7 +392,7 @@ function mouse_down_handler(ev)
 
             document.ondragover = function(event) {
                  event.preventDefault();
-                 console.log("drop allowed");
+
                  if (! $("#del-img").hasClass("active"))
                  {
                      $("#del-img").addClass("active");
@@ -396,9 +406,7 @@ function mouse_down_handler(ev)
                 let box = draggable.getBoundingClientRect();
                 let x = e.pageX; //- box.left;
                 let y = e.pageY;//- box.top;
-                //let x_rel = e.pageX - box.left;
-                //let y_rel = e.pageY - 150;  // height of toolbox s// box.top;
-                console.log("absolute coords on page:", x, y);
+
                 if ( e.target.id !== "del-img" )
                 {
 
@@ -422,23 +430,28 @@ function mouse_down_handler(ev)
     }
     //$("body").append(`<input style=position:absolute top=${x}px left=${y}px><button></button>`);
 }
-function add_canvas_text(x, y, val)
+function add_canvas_text(x, y, val, row_idx, font, sync)
 {
-    let box = canvas[0].getBoundingClientRect();
-    let c_x = x - box.left;
-    let c_y = y - box.top;
 
+    // coords are absolute
+    let box = canvas[0].getBoundingClientRect();
+
+    let c_x = x - box.left - window.scrollX;
+    let c_y = y - box.top - window.scrollY;
+
+    let your_style = ctx.font;
+    ctx.font = font;
     ctx.fillText(val, c_x, c_y);
+    ctx.font = your_style;
+
     $(".temp").remove();
 
-    // canvas text
-    //let cl_msg = new ClientMessage(socket,
-    //Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition,
-    //"base64",
-    //   {"canvas_text": val, "x":x, "y":y});
-    //cl_msg.send();
-    QUEUE.push({"canvas_text":{"text":val, "x":x, "y":y}})
-    //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+    if (sync)
+    QUEUE.push({"draw_text":{"x":x-(parseInt(ctx.font)/4),
+                            "y":y+(row_idx*parseInt(ctx.font))+(parseInt(ctx.font)/4),
+                            "text": val,
+                            "font": ctx.font,
+                        }});
 }
 function font(size, font)
 {
@@ -512,4 +525,13 @@ function redo()
 function set_eraser_thickness(t)
 {
     eraser_thickness = t
+}
+
+function place_indicator(x, y)
+{
+    let e = document.createElement("div");
+    e.className = "indicator";
+    e.style.left = x+"px";
+    e.style.top = y+"px";
+    document.getElementsByTagName("body")[0].appendChild(e);
 }

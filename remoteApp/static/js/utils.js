@@ -41,14 +41,13 @@ function handle_tool_change(tool)
     }
 }
 
-let x_min_ignored_dist = 30;
-let y_min_ignored_dist = 30;
-let ignored_line_dist = 50;
+// increase for better performance
+let x_min_ignored_dist = 20;
+let y_min_ignored_dist = 20;
+let ignored_line_dist = 5;
 
 function push_line_coords_to_queue(x0, y0, x1, y1, color)
 {
-
-
 
     if (QUEUE.length > 0)
     {

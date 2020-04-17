@@ -5,7 +5,7 @@ function add_image(x, y, url, id, sync_with_server)
 {
     let element = document.createElement("img");
     element.id = ( id===undefined?Math.random() *10**17:id ).toString();
-    element.className += "movable_image";
+    element.className += "movable_image noSelect";
     element.src = url;
     element.style.position = "absolute";
     element.style.left = x+"px";
