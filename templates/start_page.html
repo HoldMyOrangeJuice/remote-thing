@@ -7,13 +7,17 @@
 {#    <script src="{% static "js/utils.js" %}"></script>#}
 {#    <link  rel="stylesheet" href="{% static "style.css" %}">#}
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{% static "style.css" %}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="{% static "css/style.css" %}">
+    <link rel="stylesheet" href="{% static "css/chat.css" %}">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="{% static "js/objects.js" %}"></script>
     <script src="{% static "js/utils.js" %}"></script>
     <script src="{% static "js/canvas_interactions.js" %}"></script>
     <script src="{% static "js/image_interactions.js" %}"></script>
     <script src="{% static "js/command_handlers.js" %}"></script>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <title>Title</title>
 
@@ -23,18 +27,55 @@
 {% csrf_token %}
 </head>
 
+<div id="draggable" class="chat_main_draggable hidden">
+    <div class="messages">
+        <p class="message stranger">hi!</p>
+        <p class="message you">hello!</p>
+    </div>
+    <div class="message-input-box">
+
+        <div class="msg-inp-row">
+            <p contenteditable="true" class="message-input" id="chat-input">foo</p>
+            <button class="input-box-btn" onclick="toggle_math()"><span class="mafs">&#215;</span></button>
+            <button class="input-box-btn"><i class="material-icons">send</i></button>
+        </div>
+        <div class="msg-inp-row">
+            <div id="math-stuff" class="hidden">
+                <p class="grid-item" onclick="add_sup()">x<sup>y</sup></p>
+                <p class="grid-item" onclick="add_sqrt_sign()">√x</p>
+                <p class="grid-item" onclick="add_sub()">x<sub>y</sub></p>
+                <p class="grid-item" onclick="add_overline()">x̅</p>
+                <p class="grid-item">4</p>
+                <p class="grid-item">4</p>
+                <p class="grid-item">4</p>
+                <p class="grid-item">4</p>
+        </div>
+
+
+
+    </div>
+
+</div>
+
+
+
+</div>
+
+
+
+
 <body id="body">
 
     <div id="toolbar">
-
         <div class="toolbar-row ">
-
+            <button onclick="toggle(document.getElementById('draggable'))"></button>
             <div class="aligned-group">
                  <select id="toolbox" >
                 <option>pencil</option>
                 <option>erase</option>
                 <option>text</option>
                 <option>edit background</option>
+                <option>line</option>
             </select>
             </div>
 
@@ -166,7 +207,11 @@
     let relax = new Audio( "{% static  "relax.ogg" %}" );
     let soup = new Audio( "{% static  "soup.ogg" %}" );
 </script>
+
     <script src="{% static "js/main.js" %}"></script>
+    <script src="{% static "js/chat.js" %}"></script>
+    <script>console.log($('#draggable'));enable_draggable();</script>
+
 </body>
 
 </html>

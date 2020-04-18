@@ -1,5 +1,8 @@
+
+
 body
 {
+    --input-things_height: 3vh;
     height: 100vh;
     background: rgb(35,174,182);
     background: linear-gradient(90deg, rgba(35,174,182,1) 4%, rgba(98,211,215,1) 22%, rgba(13,125,171,1) 37%, rgba(32,138,177,1) 49%, rgba(39,210,87,1) 54%, rgba(19,177,122,1) 56%, rgba(119,45,143,1) 58%, rgba(58,156,168,1) 63%, rgba(76,203,178,1) 89%, rgba(0,212,255,1) 96%);
@@ -202,4 +205,10 @@ width: 100%;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+
+
+.hidden {
+    display: none !important;
 }

@@ -3,6 +3,7 @@ let client_interaction=false;
 let IP = Math.random()*10**17;
 let eraser_thickness = 20;
 const size = 1000;
+let line_obj_in_progress;
     $.ajax({
   dataType: "json",
   url: 'http://gd.geobytes.com/GetCityDetails?callback=?',
@@ -72,12 +73,13 @@ let ctx = canvas[0].getContext('2d');
 
 
 
-
+let canvas_lines = [];
+let actions = [];
 let line_started = false;
 let line_continued = false;
 let cur_page = 228; // number is relative, i dont care
 
-var tool = $("#toolbox").val();
+let tool = $("#toolbox").val();
 let erase_is_on = false;
 $("#toolbox")[0].addEventListener("input", ()=>
 {
@@ -112,7 +114,12 @@ document.addEventListener("mousemove", (e)=>
     let y = e.clientY - rect.top;
 
 
-
+    if (tool === "line" && line_started)
+    {
+        // draw temp shadow
+        redraw_canvas();
+        draw_line(line_started.x, line_started.y, x, y, "gray", false, false);
+    }
 
     if (tool === "pencil" && mouseDown && e.target.tagName === "CANVAS")
     {
@@ -122,7 +129,9 @@ document.addEventListener("mousemove", (e)=>
         }
         else
         {
-            draw_line(line_started.x, line_started.y, x, y, ctx.strokeStyle, true);
+            line_obj_in_progress = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
+
+            draw_line(line_started.x, line_started.y, x, y, ctx.strokeStyle, false, true);
             line_started = false;
             line_continued = false;
             line_started = {"x":x, "y":y};
@@ -157,13 +166,15 @@ document.addEventListener("mousemove", (e)=>
         ctx.clearRect(x - eraser_thickness/2, y - eraser_thickness/2, eraser_thickness, eraser_thickness);
         QUEUE.push({"erase":{"x":x, "y":y, "thick":eraser_thickness}});
 
-        }
+    }
 
-        if (e.target.id !== "canvas")
-        {
-            line_started = false;
-            line_continued = false;
-        }
+
+
+    if (e.target.id !== "canvas" && line_started)
+    {
+        line_started = false;
+        redraw_canvas();
+    }
 
 });
 
@@ -186,17 +197,31 @@ socket.onmessage = function(event) {
         clear_scene(false);
         cur_page = data.page
     }
-
+    canvas_lines = [];
+    actions = data.actions;
     for (let action of data.actions) {
 
-        if (action.line) {
+        if (action.undo || action.redo)
+        {
+            clear_scene(false);
+        }
 
-            draw_line(action.line.x0,
-                action.line.y0,
-                action.line.x1,
-                action.line.y1,
-                action.line.c,
-                false);
+        if (action.line_obj)
+        {
+
+            for (let line of action.line_obj)
+            {
+                canvas_lines.push(line);
+
+                draw_line(line.x0,
+                    line.y0,
+                    line.x1,
+                    line.y1,
+                    line.c,
+                    action.inactive,
+                    false);
+            }
+
         }
         if (action.erase) {
             erase(action.erase.x, action.erase.y, action.erase.thick);
@@ -274,10 +299,33 @@ function getCookie(name) {
 }
 function mouse_up_handler(ev)
 {
+    let rect = canvas[0].getBoundingClientRect();
+    let x = ev.clientX - rect.left;
+    let y = ev.clientY - rect.top;
 
     if (tool==="erase" && (ev.target.className.includes("temp") || ev.target.id==="canvas"))
     {
         erase_is_on = false;
+    }
+
+    if (tool === "line")
+    {
+        draw_line(line_started.x,
+            line_started.y,
+            x,
+            y,
+            ctx.strokeStyle,
+            false,
+            true);
+
+
+        let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle);
+        canvas_lines.push(finished_line_obj[0]);
+        push_line_obj_to_q(finished_line_obj);
+
+        // should also work on cnv update now
+        //canvas_lines.push({"x0":line_started.x,"y0":line_started.y,"x1":x,"y1":y, "c":ctx.strokeStyle});
+        line_started = false;
     }
 
     $('div.temp.delete_on_mouse_up').remove();
@@ -288,36 +336,43 @@ function mouse_up_handler(ev)
         // mouse up on canvas => line finished
         if (tool === "pencil")
         {
+            let line_obj_done = line_obj_in_progress;
+            push_line_obj_to_q(line_obj_done);
+
             line_started=false;
             line_continued=false;
-            //{"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
+            line_obj_in_progress = []
 
-            // idk for what reason i have this one
-            //let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition, canvas[0].toDataURL())
-            //cl_msg.send()
 
         }
     }
     else if (line_started)
     {
         // line was started on canvas but mouse up outside
-        //send_data({"client-canvas-update": "yas", "canvas-image": canvas[0].toDataURL()});
-        //let cl_msg = new ClientMessage(socket, Initiator.Update.DataBaseUpdate.AdditionUpdate.client_canvas_addition, canvas[0].toDataURL());
-        //cl_msg.send();
         line_started=false;
-        line_continued=false;
         mouseDown=false;
+        line_obj_in_progress = []
     }
 }
 
 
 function mouse_down_handler(ev)
 {
+    let rect = canvas[0].getBoundingClientRect();
+    let x = ev.clientX - rect.left;
+    let y = ev.clientY - rect.top;
+
+
     if (tool === "erase" && (ev.target.id === "canvas" || ev.target.className.includes("temp")))
     {
         console.log("toggle erase to", !erase_is_on);
         erase_is_on = true;
     }
+    if (tool === "line")
+    {
+        line_started = {"x": x, "y": y};
+    }
+
 
     //console.log("del on mouse down", $(".temp"), $(".delete_on_mouse_down"));
 
@@ -488,12 +543,7 @@ function send_your_last_interaction()
 
 }
 
-function send_command(command_object)
-{
-    command_object.invoker = IP;
-    QUEUE.push({"command":{"command": command_object}, "client": IP, });
-    return {"command":{"command": command_object}, "client": IP, }
-}
+
 
 function get_sound(name)
 {
@@ -515,12 +565,12 @@ let undo_count = 0;
 
 function undo()
 {
-    //undo_count ++;
+    QUEUE.push({"undo":"undo"})
 }
 
 function redo()
 {
-    //undo_count --;
+    QUEUE.push({"redo":"redo"})
 }
 function set_eraser_thickness(t)
 {
@@ -535,3 +585,33 @@ function place_indicator(x, y)
     e.style.top = y+"px";
     document.getElementsByTagName("body")[0].appendChild(e);
 }
+
+function redraw_canvas()
+{
+    ctx.clearRect(0,0, 15000, 1500);
+    for (let line of canvas_lines)
+    {
+
+        draw_line(line.x0,
+                line.y0,
+                line.x1,
+                line.y1,
+                line.c,
+                line.inactive,
+                false);
+    }
+}
+
+// hot keys
+
+document.addEventListener("keydown", e=>
+{
+    if (e.key === "z" && e.ctrlKey)
+    {
+        undo();
+    }
+    if (e.key === "x" && e.ctrlKey)
+    {
+        redo();
+    }
+});

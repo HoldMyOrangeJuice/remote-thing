@@ -22,25 +22,69 @@ class ClientMessage:
         for action in self.actions:
             # action is { "action":{} }
 
-            if list(action.keys())[0] == "line":
+            if get_key(action) == "line_obj":
                 bulk_to_add.append(action)
 
-            if list(action.keys())[0] == "erase":
+            if get_key(action) == "erase":
                 bulk_to_add.append(action)
 
-            if list(action.keys())[0] == "add_image":
+            if get_key(action) == "add_image":
                 bulk_to_add.append(action)
 
-            if list(action.keys())[0] == "move_image":
+            if get_key(action) == "move_image":
                 bulk_to_add.append(action)
 
-            if list(action.keys())[0] == "del_image":
+            if get_key(action) == "del_image":
                 bulk_to_add.append(action)
 
-            if list(action.keys())[0] == "text":
+            if get_key(action) == "text":
                 bulk_to_add.append(action)
-            if list(action.keys())[0] == "draw_text":
+
+            if get_key(action) == "draw_text":
                 bulk_to_add.append(action)
+
+            if get_key(action) == "undo":
+
+                actions = await self.get_actions(Consumer.current_page)
+
+                for i in reversed(list(range((len(actions))))):
+                    action_of_db = actions[i]
+                    if action_of_db.get("inactive") is False or action_of_db.get("inactive") is None:
+
+                        action_of_db["inactive"] = True
+
+                        break
+
+
+                undo = [{"undo":"undo"}]
+                undo.extend(actions)
+
+                await self.set_actions(Consumer.current_page, actions)
+                sv_msg = ServerMessage(actions=undo,
+                                       page=Consumer.current_page,
+                                       all_consumers=Consumer.get_consumers(),
+                                       except_consumer=None)
+                await sv_msg.send()
+
+            if get_key(action) == "redo":
+
+                actions = await self.get_actions(Consumer.current_page)
+                for i in reversed(list(range(len(actions)))):
+                    action_of_db = actions[i]
+                    if action_of_db.get("inactive") is True:
+                        action_of_db["inactive"] = False
+                        break
+                await self.set_actions(Consumer.current_page, actions)
+
+                redo = [{"redo": 'redo'}]
+                redo.extend(actions)
+
+                sv_msg = ServerMessage(actions=redo,
+                                       page=Consumer.current_page,
+                                       all_consumers=Consumer.get_consumers(),
+                                       except_consumer=None)
+                await sv_msg.send()
+
 
 
             # send update to consumers only for scene upd
@@ -74,6 +118,11 @@ class ClientMessage:
                 if get_key(action.get("command")) == "command":
                     command = action['command'].get('command')
 
+                    if command.get("receiver") == "all":
+                        receiver = Consumer.get_consumers()
+                    else:
+                        receiver = [get_consumer(command.get("receiver"))]
+
                     # filter commands server meant to handle
                     if command.get("delete_page") is not None:
 
@@ -84,8 +133,7 @@ class ClientMessage:
                         invoker = self.ip
                         sv_msg = ServerMessage(actions=[{"command": {"command": command, "invoker": invoker}}],
                                                page=get_consumer(invoker).current_page,
-                                               except_consumer=get_consumer(invoker),
-                                               all_consumers=Consumer.get_consumers())
+                                               all_consumers=receiver)
                         await sv_msg.send()
 
                 if get_key(action.get("command")) == "command_response":
@@ -102,6 +150,12 @@ class ClientMessage:
     def save_to_db(self, bulk_to_add, page):
         page = Page(index=page)
         page.append_bulk(bulk_to_add)
+
+    @database_sync_to_async
+    def set_actions(self, page, data):
+        page = Page(index=page)
+        page.set_actions(data)
+
 
     @database_sync_to_async
     def get_actions(self, page):

