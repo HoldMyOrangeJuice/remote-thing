@@ -4,6 +4,7 @@ let IP = Math.random()*10**17;
 let eraser_thickness = 20;
 const size = 1000;
 let line_obj_in_progress;
+let erase_obj_in_progress;
     $.ajax({
   dataType: "json",
   url: 'http://gd.geobytes.com/GetCityDetails?callback=?',
@@ -73,7 +74,7 @@ let ctx = canvas[0].getContext('2d');
 
 
 
-let canvas_lines = [];
+
 let actions = [];
 let line_started = false;
 let line_continued = false;
@@ -131,9 +132,7 @@ document.addEventListener("mousemove", (e)=>
         {
             line_obj_in_progress = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
 
-            draw_line(line_started.x, line_started.y, x, y, ctx.strokeStyle, false, true);
-            line_started = false;
-            line_continued = false;
+            draw_line(line_started.x, line_started.y, x, y, ctx.strokeStyle);
             line_started = {"x":x, "y":y};
         }
     }
@@ -164,7 +163,8 @@ document.addEventListener("mousemove", (e)=>
         }
 
         ctx.clearRect(x - eraser_thickness/2, y - eraser_thickness/2, eraser_thickness, eraser_thickness);
-        QUEUE.push({"erase":{"x":x, "y":y, "thick":eraser_thickness}});
+        //QUEUE.push({"erase":{"x":x, "y":y, "thick":eraser_thickness}});
+        erase_obj_in_progress = add_to_erase_object(x, y, eraser_thickness, erase_obj_in_progress);
 
     }
 
@@ -197,21 +197,27 @@ socket.onmessage = function(event) {
         clear_scene(false);
         cur_page = data.page
     }
-    canvas_lines = [];
     actions = data.actions;
+
     for (let action of data.actions) {
 
         if (action.undo || action.redo)
         {
             clear_scene(false);
         }
+        if (action.inactive)
+        {
+            console.log("skip undone action", action);
+            continue;
+        }
+        console.log("action", action);
 
         if (action.line_obj)
         {
 
             for (let line of action.line_obj)
             {
-                canvas_lines.push(line);
+
 
                 draw_line(line.x0,
                     line.y0,
@@ -223,8 +229,9 @@ socket.onmessage = function(event) {
             }
 
         }
-        if (action.erase) {
-            erase(action.erase.x, action.erase.y, action.erase.thick);
+        if (action.erase_obj) {
+            for (let erase_point of action.erase_obj)
+            erase(erase_point.x, erase_point.y, erase_point.thick);
         }
         if (action.add_image) {
             let e = action.add_image;
@@ -306,6 +313,8 @@ function mouse_up_handler(ev)
     if (tool==="erase" && (ev.target.className.includes("temp") || ev.target.id==="canvas"))
     {
         erase_is_on = false;
+        push_erase_obj_to_q(erase_obj_in_progress);
+        erase_obj_in_progress = false;
     }
 
     if (tool === "line")
@@ -319,12 +328,12 @@ function mouse_up_handler(ev)
             true);
 
 
-        let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle);
-        canvas_lines.push(finished_line_obj[0]);
+        let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
+
         push_line_obj_to_q(finished_line_obj);
 
         // should also work on cnv update now
-        //canvas_lines.push({"x0":line_started.x,"y0":line_started.y,"x1":x,"y1":y, "c":ctx.strokeStyle});
+        //canvas_line_objects.push({"x0":line_started.x,"y0":line_started.y,"x1":x,"y1":y, "c":ctx.strokeStyle});
         line_started = false;
     }
 
@@ -336,12 +345,18 @@ function mouse_up_handler(ev)
         // mouse up on canvas => line finished
         if (tool === "pencil")
         {
-            let line_obj_done = line_obj_in_progress;
-            push_line_obj_to_q(line_obj_done);
+            draw_line(line_started.x,
+            line_started.y,
+            x,
+            y,
+            ctx.strokeStyle,
+            false,
+            true);
 
-            line_started=false;
-            line_continued=false;
-            line_obj_in_progress = []
+
+        let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
+        push_line_obj_to_q(finished_line_obj);
+        line_obj_in_progress = [];
 
 
         }
@@ -368,10 +383,11 @@ function mouse_down_handler(ev)
         console.log("toggle erase to", !erase_is_on);
         erase_is_on = true;
     }
-    if (tool === "line")
+    if (tool === "line" || tool === "pencil")
     {
         line_started = {"x": x, "y": y};
     }
+
 
 
     //console.log("del on mouse down", $(".temp"), $(".delete_on_mouse_down"));
@@ -560,17 +576,41 @@ function get_sound(name)
 });
 }
 
-
-let undo_count = 0;
-
 function undo()
 {
-    QUEUE.push({"undo":"undo"})
+    QUEUE.push({"undo":"undo"});
+    console.log(actions);
+    // undo on client-side as well to ensure speed
+    for (let i = actions.length-1; i>=0; i--)
+    {
+        let action = actions[i];
+        if (action.inactive === false || action.inactive === undefined)
+        {
+            action.inactive = true;
+            redraw_canvas();
+            break;
+        }
+    }
 }
 
 function redo()
 {
-    QUEUE.push({"redo":"redo"})
+    QUEUE.push({"redo":"redo"});
+    console.log(actions);
+
+    // redo on client-side as well to ensure speed
+    for (let i = actions.length-1; i>=0; i--)
+    {
+        let action = actions[i];
+        if (i===0 || (action.inactive === true && actions[i-1].inactive === false))
+        {
+            action.inactive = false;
+            redraw_canvas();
+            break;
+        }
+
+
+    }
 }
 function set_eraser_thickness(t)
 {
@@ -588,17 +628,37 @@ function place_indicator(x, y)
 
 function redraw_canvas()
 {
-    ctx.clearRect(0,0, 15000, 1500);
-    for (let line of canvas_lines)
+    console.log("redraw!");
+    ctx.clearRect(0,0, 1500, 1500);
+    for (let action of actions)
     {
+        if (action.inactive)
+        {
+            return
+        }
 
-        draw_line(line.x0,
-                line.y0,
-                line.x1,
-                line.y1,
-                line.c,
-                line.inactive,
-                false);
+        if (action.line_obj)
+        {
+            for (let line of action.line_obj)
+            {
+                draw_line(line.x0,
+                    line.y0,
+                    line.x1,
+                    line.y1,
+                    line.c,
+                    false);
+            }
+        }
+        if (action.erase_obj)
+        {
+            for (let point of action.erase_obj)
+            {
+                erase(point.x, point.y, point.thick)
+            }
+        }
+        // also need to handle image stuff
+
+
     }
 }
 

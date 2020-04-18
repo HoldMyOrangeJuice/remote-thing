@@ -69,8 +69,22 @@ function toggle_math()
 
 function push_line_obj_to_q(object)
 {
-    console.log('line object done:', object);
-    QUEUE.push({"line_obj":object})
+    if (object)
+    {
+        console.log('line object done:', object);
+        QUEUE.push({"line_obj":object})
+    }
+
+}
+
+function push_erase_obj_to_q(object)
+{
+    if (object)
+    {
+        console.log('erase object done:', object);
+        QUEUE.push({"erase_obj":object})
+    }
+
 }
 
 

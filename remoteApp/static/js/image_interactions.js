@@ -21,6 +21,10 @@ function add_image(x, y, url, id, sync_with_server)
 function move_image(id, x, y, sync_with_server)
 {
     let element = document.getElementById(id);
+
+    if (tool === "edit background")
+        $(element).addClass("top");
+
     element.style.left = x+"px";
     element.style.top = y+"px";
     if (sync_with_server)

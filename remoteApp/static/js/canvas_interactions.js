@@ -1,16 +1,15 @@
-function draw_line(x1, y1, x2, y2, color, inactive, sync)
+function draw_line(x1, y1, x2, y2, color)
 {
-    if (inactive === true)return;
+
+
     let your_style = ctx.strokeStyle;
 
     if (color === "#ff1337")
     {
         ctx.strokeStyle = `rgb(${Math.random()*256}, ${Math.random()*256}, ${Math.random()*256})`;
     }
-
     else
         ctx.strokeStyle = color;
-
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -48,7 +47,7 @@ function add_to_line_object(x0, y0, x1, y1, color, obj)
     }
 
 
-
+    console.log("obj before", JSON.stringify(object));
     if (object.length > 0)
     {
         for (let i = object.length - 1; i >= 0; i--)
@@ -95,8 +94,39 @@ function add_to_line_object(x0, y0, x1, y1, color, obj)
 
                 })
     }
-
+console.log("obj after", JSON.stringify(object));
     return object
 
+
+}
+
+function add_to_erase_object(x, y, thickness, obj)
+{
+    console.log("add to erase", x, y);
+    let object = obj;
+    if (!object)
+    {
+        object = []
+    }
+
+    // simplify
+    if(object.length > 0)
+    {
+        let prev_point = object[object.length-1];
+        if (dist(x, y, prev_point.x, prev_point.y) > Math.min(prev_point.thick/2, thickness/2))
+        {
+            // significant distance between erase attempts
+            object.push({"x":x, "y":y, "thick": thickness})
+        }
+    }
+    else
+    {
+        object.push({"x":x, "y":y, "thick": thickness})
+    }
+    return object;
+}
+
+function handle_canvas_stuff(actions)
+{
 
 }

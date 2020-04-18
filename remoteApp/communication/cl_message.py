@@ -20,12 +20,11 @@ class ClientMessage:
         from remoteApp.consumers import Consumer
         bulk_to_add = []
         for action in self.actions:
-            # action is { "action":{} }
-
+            print(action)
             if get_key(action) == "line_obj":
                 bulk_to_add.append(action)
 
-            if get_key(action) == "erase":
+            if get_key(action) == "erase_obj":
                 bulk_to_add.append(action)
 
             if get_key(action) == "add_image":
@@ -63,7 +62,7 @@ class ClientMessage:
                 sv_msg = ServerMessage(actions=undo,
                                        page=Consumer.current_page,
                                        all_consumers=Consumer.get_consumers(),
-                                       except_consumer=None)
+                                       except_consumer=get_consumer(self.ip))  # undos are made locally on client as well
                 await sv_msg.send()
 
             if get_key(action) == "redo":
@@ -71,7 +70,10 @@ class ClientMessage:
                 actions = await self.get_actions(Consumer.current_page)
                 for i in reversed(list(range(len(actions)))):
                     action_of_db = actions[i]
-                    if action_of_db.get("inactive") is True:
+                    print("searching for action to redo", "current",
+                          action_of_db.get("inactive"),
+                          "previous", actions[i-1].get("inactive"))
+                    if (action_of_db.get("inactive") is True and actions[i-1].get("inactive") == False) or i == 0:
                         action_of_db["inactive"] = False
                         break
                 await self.set_actions(Consumer.current_page, actions)
@@ -82,7 +84,7 @@ class ClientMessage:
                 sv_msg = ServerMessage(actions=redo,
                                        page=Consumer.current_page,
                                        all_consumers=Consumer.get_consumers(),
-                                       except_consumer=None)
+                                       except_consumer=get_consumer(self.ip))  # redos are made locally on client as well
                 await sv_msg.send()
 
 
@@ -113,6 +115,11 @@ class ClientMessage:
                 await sv_msg.send()
 
             #########################################
+            try:
+                list(action.keys())[0]
+            except:
+                print("\n\n\n\nERROR", action)
+
             if list(action.keys())[0] == "command":
 
                 if get_key(action.get("command")) == "command":
@@ -156,7 +163,6 @@ class ClientMessage:
         page = Page(index=page)
         page.set_actions(data)
 
-
     @database_sync_to_async
     def get_actions(self, page):
         page = Page(index=page)
@@ -169,7 +175,10 @@ class ClientMessage:
 
 
 def get_key(d):
-    return list(d.keys())[0]
+    try:
+        return list(d.keys())[0]
+    except:
+        return ""
 
 
 def get_consumer(ip):
