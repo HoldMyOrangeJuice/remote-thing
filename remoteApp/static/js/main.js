@@ -1,18 +1,119 @@
 let QUEUE = [];
+let COMMAND_QUEUE = [];
 let client_interaction=false;
-let IP = Math.random()*10**17;
+let IP; //= Math.random()*10**17;
 let eraser_thickness = 20;
 const size = 1000;
 let line_obj_in_progress;
 let erase_obj_in_progress;
+let socket;
     $.ajax({
   dataType: "json",
   url: 'http://gd.geobytes.com/GetCityDetails?callback=?',
   success: (data)=>
   {
-      //IP = data.geobytesremoteip
+      IP =Math.random()*10**17; //data.geobytesremoteip;
+      socket = new WebSocket("ws://"+location.host + location.pathname);
 
-  }
+      socket.onopen = function(event)
+      {
+          console.log("socket opened!", event);
+          QUEUE.push({"k":"v"})
+      };
+
+      socket.onmessage = function(event)
+      {
+          let data = JSON.parse(event.data);
+
+          console.log(data);
+
+          if (cur_page !== data.page) {
+              clear_scene(false);
+              cur_page = data.page
+          }
+          if (data.actions)
+          {
+              actions = data.actions;
+
+              for (let action of data.actions) {
+
+                if (action.undo || action.redo)
+                {
+                    clear_scene(false);
+                }
+                if (action.inactive)
+                {
+                    console.log("skip undone action", action);
+                    continue;
+                }
+                console.log("action", action);
+
+                if (action.line_obj)
+                {
+
+                    for (let line of action.line_obj)
+                    {
+
+
+                        draw_line(line.x0,
+                            line.y0,
+                            line.x1,
+                            line.y1,
+                            line.c,
+                            action.inactive,
+                            false);
+                    }
+
+                }
+                if (action.erase_obj) {
+                    for (let erase_point of action.erase_obj)
+                    erase(erase_point.x, erase_point.y, erase_point.thick);
+                }
+                if (action.add_image) {
+                    let e = action.add_image;
+                    add_image(e.x, e.y, e.url, e.id, false)
+                }
+                if (action.move_image) {
+                    let e = action.move_image;
+                    move_image(e.id, e.x, e.y, false);
+
+                }
+                if (action.del_image) {
+                    let e = action.del_image;
+                    delete_image(e.id, false)
+                }
+                if (action.text)
+                {
+                    set_text(action.text, false);
+                }
+                if (action.draw_text)
+                {
+                    add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text, 0, action.draw_text.font, false);
+                }
+              }
+          }
+
+
+            if (data.commands)
+            {
+                for (let command of data.commands)
+                {
+                    if (command.command)
+                    {
+                        distribute_commands(command.command)
+                    }
+                    if (command.command_response)
+                    {
+                        command_response_handler(command.command_response);
+                    }
+                }
+
+            }
+
+
+        };
+
+     }
 });
 
 
@@ -28,8 +129,9 @@ function drop(evt)
     if (new Date().getTime() - last_image_drop < 1000) {
         return;
     }
-
-    last_image_drop = new Date().getTime();
+    try
+    {
+        last_image_drop = new Date().getTime();
 
     let canvas_box = canvas[0].getBoundingClientRect();
     evt.stopPropagation();
@@ -54,6 +156,12 @@ function drop(evt)
         add_image(page_x - width / 2, page_y - height / 2, url[1], undefined, true);
 
     };
+    }
+    catch (e)
+    {
+        console.log("error", e)
+    }
+
 
 }
 
@@ -179,94 +287,11 @@ document.addEventListener("mousemove", (e)=>
 });
 
 
-let socket = new WebSocket("ws://"+location.host + location.pathname);
-
-socket.onopen = function(event)
-{
-    console.log("socket opened!", event);
-    QUEUE.push({"k":"v"})
-};
-
-socket.onmessage = function(event) {
-    let data = JSON.parse(event.data);
-
-    console.log(data);
-
-    if (cur_page !== data.page)
-    {
-        clear_scene(false);
-        cur_page = data.page
-    }
-    actions = data.actions;
-
-    for (let action of data.actions) {
-
-        if (action.undo || action.redo)
-        {
-            clear_scene(false);
-        }
-        if (action.inactive)
-        {
-            console.log("skip undone action", action);
-            continue;
-        }
-        console.log("action", action);
-
-        if (action.line_obj)
-        {
-
-            for (let line of action.line_obj)
-            {
 
 
-                draw_line(line.x0,
-                    line.y0,
-                    line.x1,
-                    line.y1,
-                    line.c,
-                    action.inactive,
-                    false);
-            }
 
-        }
-        if (action.erase_obj) {
-            for (let erase_point of action.erase_obj)
-            erase(erase_point.x, erase_point.y, erase_point.thick);
-        }
-        if (action.add_image) {
-            let e = action.add_image;
-            add_image(e.x, e.y, e.url, e.id, false)
-        }
-        if (action.move_image) {
-            let e = action.move_image;
-            move_image(e.id, e.x, e.y, false);
 
-        }
-        if (action.del_image) {
-            let e = action.del_image;
-            delete_image(e.id, false)
-        }
-        if (action.text)
-        {
-            set_text(action.text, false);
-        }
-        if (action.draw_text)
-        {
-            add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text, 0, action.draw_text.font, false);
-        }
 
-        if (action.command) {
-            if (action.command.command) {
-                distribute_commands(action.command.command)
-            }
-            if (action.command.command_response) {
-                command_response_handler(action);
-                console.log(action);
-            }
-        }
-    }
-
-};
 
 function clear_canvas(save)
 {
@@ -275,11 +300,13 @@ function clear_canvas(save)
 
 function next()
 {
+    actions =[];
     ctx.clearRect(0,0,1500,size);
     QUEUE.push({"page":"next"})
 }
 function prev()
 {
+    actions = [];
     ctx.clearRect(0,0,1500,size);
     QUEUE.push({"page":"prev"})
 }
@@ -314,6 +341,7 @@ function mouse_up_handler(ev)
     {
         erase_is_on = false;
         push_erase_obj_to_q(erase_obj_in_progress);
+        actions.push({"erase_obj": erase_obj_in_progress});
         erase_obj_in_progress = false;
     }
 
@@ -329,7 +357,7 @@ function mouse_up_handler(ev)
 
 
         let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
-
+        actions.push({"line_obj":finished_line_obj});
         push_line_obj_to_q(finished_line_obj);
 
         // should also work on cnv update now
@@ -355,6 +383,7 @@ function mouse_up_handler(ev)
 
 
         let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
+        actions.push({"line_obj": finished_line_obj});
         push_line_obj_to_q(finished_line_obj);
         line_obj_in_progress = [];
 

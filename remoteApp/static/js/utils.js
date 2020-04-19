@@ -18,6 +18,13 @@ setInterval(()=>
         socket.send(JSON.stringify({"actions": QUEUE, "client": IP}));
         QUEUE = [];
     }
+    if (COMMAND_QUEUE.length > 0)
+    {
+        socket.send(JSON.stringify({"commands": COMMAND_QUEUE, "client": IP}));
+        COMMAND_QUEUE = [];
+    }
+
+
 }, 1000);
 
 function handle_tool_change(tool)
@@ -53,18 +60,21 @@ function dist(x0, y0, x1, y1) {
 
 function toggle_math()
 {
-    let chat = $("#draggable");
-    let chat_box = chat[0].getBoundingClientRect();
+    console.log("toggle");
+    let math_input = $("#math-field");
+    let text_input = $("#text-field");
 
-    if ($("#math-stuff").hasClass("hidden"))
+    if (math_input.hasClass("hidden"))
     {
-        $("#math-stuff").removeClass("hidden");
-
+        math_input.removeClass("hidden");
+        text_input.addClass("hidden");
     }
     else
     {
-        $("#math-stuff").addClass("hidden")
+    math_input.addClass("hidden");
+    text_input.removeClass("hidden");
     }
+
 }
 
 function push_line_obj_to_q(object)

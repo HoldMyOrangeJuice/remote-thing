@@ -1,128 +1,20 @@
-let Jmsg_box = $("#chat-input");
-let msg_box = Jmsg_box[0];
-console.log(Jmsg_box);
-
-let mode = "plain";
-
-
-
-function add_overline()
-{
-
-    msg_box.innerHTML += "̅";
-    placeCaretAtEnd( document.querySelector('div') );
-}
-
-function add_sqrt_sign()
-{
-    msg_box.innerHTML += "√";
-    placeCaretAtEnd( document.querySelector('div') );
-}
-
-function add_sup()
-{
-    mode = "sup";
-    console.log("rem sup");
-    //$(".active-tag").removeClass("active-tag");
-    msg_box.innerHTML += "<sub class='active-tag'>";
-
-}
-
-function add_sub()
-{
-    mode = "sub";
-    console.log("rem sub");
-    //$(".active-tag").removeClass("active-tag");
-    msg_box.innerHTML += "<sub class='active-tag'>";
-
-
-}
-
-
-msg_box.addEventListener("mousedown",(e)=>
-{
-    placeCaretAtEnd(document.querySelector("div"));
-});
-msg_box.addEventListener("input", e=>
-{
-
-    let input = e.data;
-    let active_tag = $('.active-tag')[0];
-
-    if (active_tag)
-    {
-        let c =0;
-        for(let i = msg_box.innerHTML.length; i >=0; i--)
-        {
-            if (msg_box.innerHTML.charAt(i) === input)
-                c++;
-            if (c === 2)
-            {
-                console.log(msg_box.innerHTML.slice(0, i), msg_box.innerHTML.slice(i+1, msg_box.innerHTML.length));
-                msg_box.innerHTML = msg_box.innerHTML.slice(0, i) + msg_box.innerHTML.slice(i+1, msg_box.innerHTML.length);
-                break;
-            }
-
-        }
-        //msg_box.innerHTML = msg_box.innerHTML.slice(0, -1);
-        console.log("removed original input");
-
-        if (input === null)
-        {
-            console.log("remove", input, "from", active_tag);
-            active_tag.innerHTML = active_tag.innerHTML.slice(0, -1)
-        }
-        else
-        {
-            console.log("add", input, "to", active_tag);
-            active_tag.innerHTML += input;
-        }
-
-        //msg_box.innerHTML = msg_box.innerHTML.slice(0, -1)
-    }
-    placeCaretAtEnd(document.querySelector("div"));
-
-});
-
-
-
-
-function placeCaretAtEnd(el) {
-    disable_draggable();
-    el.focus();
-    if (typeof window.getSelection != "undefined"
-            && typeof document.createRange != "undefined") {
-        var range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-    } else if (typeof document.body.createTextRange != "undefined") {
-        var textRange = document.body.createTextRange();
-        textRange.moveToElementText(el);
-        textRange.collapse(false);
-        textRange.select();
-    }
-    setTimeout(enable_draggable, 100);
-}
+var MQ = MathQuill.getInterface(2);
 
 
 function enable_draggable()
 {
-
+    console.log("enabling drag");
     $( "#draggable" ).draggable();
     $( "#draggable" ).draggable("enable");
 }
 
 function disable_draggable()
 {
-
+    console.log("disabling drag");
     $( "#draggable" ).draggable("disable");
 }
 
-function toggle(a)
-{
+function toggle(a) {
     let e = $(a);
     if (e.hasClass("hidden"))
         e.removeClass("hidden");
@@ -130,3 +22,73 @@ function toggle(a)
         e.addClass("hidden");
 }
 
+function add_message(msg)
+{
+    console.log("obj to add msg", msg);
+    console.log("msg is mine", msg.author === IP, msg.author, IP);
+    if (msg.innerLatex)
+    {
+        // PLEASE DONT FORGET TO VALIDATE INNER HTML BEFORE ADDING
+    let mathFieldEl = document.createElement("span");
+    mathFieldEl.className = `message ${msg.author === IP?"you":"stranger"}`;
+
+
+     // for backcompat
+    var mathField = MQ.MathField(mathFieldEl, {
+      spaceBehavesLikeTab: true, // configurable
+      handlers: {
+        edit: function() { // useful event handlers
+
+        }
+      }
+    });
+    mathField.latex(msg.innerLatex);
+    $(".messages").append($(mathFieldEl));
+    $(mathFieldEl).removeClass("mq-editable-field");
+    console.log(mathFieldEl)
+    }
+    else if (msg.innerText)
+    {
+        let e = document.createElement("p");
+        e.className = `message ${msg.author === IP?"you":"stranger"}`;
+        e.innerText = msg.innerText;
+        $(".messages")[0].append(e);
+    }
+
+}
+
+function send_chat()
+{
+    if ($('#math-field').hasClass("hidden"))
+    {
+        let f = $('#text-field');
+        format_and_send_command({"messages":[{"innerText":(f.val()), "author":IP}]});
+        f[0].value = "";
+    }
+    else
+    {
+        let latex = MQ.MathField($("#math-field")[0]).latex();
+        console.log(latex);
+        format_and_send_command({"messages":[{"innerLatex":latex, "author":IP}]});
+        MQ.MathField($("#math-field")[0]).latex("");
+    }
+
+}
+
+
+
+function initialize_math_elem(e)
+{
+    console.log("init math");
+    var mathFieldSpan = e;
+    var MQ = MathQuill.getInterface(2); // for backcompat
+    var mathField = MQ.MathField(mathFieldSpan, {
+      spaceBehavesLikeTab: true, // configurable
+      handlers: {
+        edit: function() { // useful event handlers
+            console.log(mathField.latex())
+        }
+      }
+    });
+
+}

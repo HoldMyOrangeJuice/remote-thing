@@ -3,7 +3,7 @@
     z-index: 5;
     width: 300px;
     height: 400px;
-    background-color: #9d71ff;
+    background-color: rgba(166, 187, 203, 0.89);
     overflow-y: scroll;
     padding: 10px;
 }
@@ -11,19 +11,24 @@
 .message
 {
     padding: 5px;
+    margin: 5px;
     font: 13px/18px Tahoma,sans-serif,Arial,Helvetica;
     line-height: 200%;
+    width: 75%;
 }
 
 .you
 {
     margin-right: 20%;
     background-color: #6fdaff;
+    margin-left: 5%;
 }
 .stranger
 {
     margin-left: 20%;
+    margin-right: 5%;
     background-color: #f1fff8;
+
 }
 .message-input-box
 {
@@ -31,15 +36,23 @@
     display: flex;
     align-items: center;
     flex-direction: column;
+    justify-content: center;
+    background-color: #d2e9ff;
+    padding: 0 5px 0 5px;
+    margin-bottom: 3px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    top: 10px;
 
 }
 .messages
 {
     height: 80%;
+    overflow: scroll;
 }
-.message-input
+#math-field, #text-field
 {
-    height: 30px;
+    height: auto;
     width: 70%;
     border-radius: 5px;
     border: 1px solid gray;
@@ -96,10 +109,4 @@
     text-align: center;
     background-color: #96c2ff;
 
-}
-.mafs
-{
-    font-size: 20px;
-    text-align: center;
-    vertical-align: center;
 }

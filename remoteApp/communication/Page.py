@@ -1,6 +1,7 @@
-from remoteApp.models import PageData
+from remoteApp.models import PageData, Chat
 from channels.db import database_sync_to_async
 import datetime
+
 
 class Page:
 

@@ -33,6 +33,15 @@ function distribute_commands(command)
     {
         console.log(command.log)
     }
+    if (command.messages)
+    {
+        for (let message of command.messages)
+        {
+            add_message(message);
+        }
+
+    }
+
 }
 
 
@@ -127,21 +136,22 @@ function format_and_send_command(command_object, receiverIP)
       command_object.receiver = "all";
 
     command_object.invoker = IP;
-    let r = {"command":{"command": command_object}, "client": IP,};
-    QUEUE.push(r);
+    let r = {"command": command_object};
+    COMMAND_QUEUE.push(r);
     return r;
 }
 
-function format_and_send_response(resp_info, invoker)
+function format_and_send_response(resp_info)
 {
+    let invoker = IP;
     // dont send response to self
     if (invoker === IP)
         return;
 
     resp_info.invoker = invoker;
-    let r = {"command":{"command_response":resp_info}, "client":IP};
+    let r = {"command_response":resp_info};
     console.log(r);
-    QUEUE.push(r);
+    COMMAND_QUEUE.push(r);
     return r
 }
 

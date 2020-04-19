@@ -4,11 +4,10 @@ from remoteApp.communication.Message import Message
 
 
 class ServerMessage:
-    def __init__(self, page, actions, consumer=None, all_consumers=None, except_consumer=None):
-
-
+    def __init__(self, page, commands=None, actions=None, consumer=None, all_consumers=None, except_consumer=None):
 
         self.actions = actions
+        self.commands = commands
         self.page = page
 
         if all_consumers:
@@ -24,8 +23,10 @@ class ServerMessage:
         for consumer in self.consumers:
             if consumer != self.except_consumer:
                 formatted_object = dict()
-
-                formatted_object["actions"] = self.actions
+                if self.actions:
+                    formatted_object["actions"] = self.actions
+                if self.commands:
+                    formatted_object["commands"] = self.commands
                 formatted_object["page"] = self.page
                 await consumer.send({"type": "websocket.send", "text": json.dumps(formatted_object)})
 

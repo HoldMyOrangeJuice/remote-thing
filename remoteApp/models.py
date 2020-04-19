@@ -9,6 +9,10 @@ class PageData(models.Model):
     actions = jsonfield.JSONField(default=[])
 
 
+class Chat(models.Model):
+    messages = jsonfield.JSONField(default=[])
+
+
 
 
 

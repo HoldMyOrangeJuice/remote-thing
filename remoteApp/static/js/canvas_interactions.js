@@ -47,7 +47,7 @@ function add_to_line_object(x0, y0, x1, y1, color, obj)
     }
 
 
-    console.log("obj before", JSON.stringify(object));
+
     if (object.length > 0)
     {
         for (let i = object.length - 1; i >= 0; i--)
@@ -94,7 +94,7 @@ function add_to_line_object(x0, y0, x1, y1, color, obj)
 
                 })
     }
-console.log("obj after", JSON.stringify(object));
+
     return object
 
 
@@ -123,10 +123,16 @@ function add_to_erase_object(x, y, thickness, obj)
     {
         object.push({"x":x, "y":y, "thick": thickness})
     }
+    actions.push({"erase_obj":object});
     return object;
 }
 
 function handle_canvas_stuff(actions)
+{
+
+}
+
+function handle_command_stuff(commands)
 {
 
 }

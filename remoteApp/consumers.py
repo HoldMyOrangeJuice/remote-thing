@@ -9,6 +9,7 @@ from remoteApp.communication.sv_message import ServerMessage
 from remoteApp.communication.cl_message import ClientMessage
 from remoteApp.communication.values import Update, Field, Initiator
 from remoteApp.communication.Page import Page
+from remoteApp.communication.cl_message import get_messages
 
 
 class Consumer(AsyncConsumer):
@@ -53,9 +54,16 @@ class Consumer(AsyncConsumer):
         await self.send({"type": "websocket.accept"})
 
         action_pattern = await self.get_page_data()
-
+        print("sending init data")
         msg = ServerMessage(consumer=self, actions=action_pattern, page=Consumer.current_page)
         await msg.send()
+
+        messages = await get_messages()
+        print("messages", messages)
+        if messages:
+            msg = ServerMessage(consumer=self, commands=[{"command": {"messages": messages}}], page=Consumer.current_page)
+            await msg.send()
+
 
     async def websocket_send(self, data):
 
