@@ -34,80 +34,13 @@ let socket;
           if (data.actions)
           {
               actions = data.actions;
-
-              for (let action of data.actions) {
-
-                if (action.undo || action.redo)
-                {
-                    clear_scene(false);
-                }
-                if (action.inactive)
-                {
-                    console.log("skip undone action", action);
-                    continue;
-                }
-                console.log("action", action);
-
-                if (action.line_obj)
-                {
-
-                    for (let line of action.line_obj)
-                    {
-
-
-                        draw_line(line.x0,
-                            line.y0,
-                            line.x1,
-                            line.y1,
-                            line.c,
-                            action.inactive,
-                            false);
-                    }
-
-                }
-                if (action.erase_obj) {
-                    for (let erase_point of action.erase_obj)
-                    erase(erase_point.x, erase_point.y, erase_point.thick);
-                }
-                if (action.add_image) {
-                    let e = action.add_image;
-                    add_image(e.x, e.y, e.url, e.id, false)
-                }
-                if (action.move_image) {
-                    let e = action.move_image;
-                    move_image(e.id, e.x, e.y, false);
-
-                }
-                if (action.del_image) {
-                    let e = action.del_image;
-                    delete_image(e.id, false)
-                }
-                if (action.text)
-                {
-                    set_text(action.text, false);
-                }
-                if (action.draw_text)
-                {
-                    add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text, 0, action.draw_text.font, false);
-                }
-              }
+              handle_actions(data.actions)
           }
 
 
             if (data.commands)
             {
-                for (let command of data.commands)
-                {
-                    if (command.command)
-                    {
-                        distribute_commands(command.command)
-                    }
-                    if (command.command_response)
-                    {
-                        command_response_handler(command.command_response);
-                    }
-                }
-
+                handle_commands(data.commands)
             }
 
 
@@ -631,8 +564,9 @@ function redo()
     for (let i = actions.length-1; i>=0; i--)
     {
         let action = actions[i];
-        if (i===0 || (action.inactive === true && actions[i-1].inactive === false))
+        if ( action.inactive === true && (i===0 || !(actions[i-1].inactive)))
         {
+            console.log("found acion to redo", action, i);
             action.inactive = false;
             redraw_canvas();
             break;
@@ -659,36 +593,7 @@ function redraw_canvas()
 {
     console.log("redraw!");
     ctx.clearRect(0,0, 1500, 1500);
-    for (let action of actions)
-    {
-        if (action.inactive)
-        {
-            return
-        }
-
-        if (action.line_obj)
-        {
-            for (let line of action.line_obj)
-            {
-                draw_line(line.x0,
-                    line.y0,
-                    line.x1,
-                    line.y1,
-                    line.c,
-                    false);
-            }
-        }
-        if (action.erase_obj)
-        {
-            for (let point of action.erase_obj)
-            {
-                erase(point.x, point.y, point.thick)
-            }
-        }
-        // also need to handle image stuff
-
-
-    }
+    handle_actions(actions);
 }
 
 // hot keys

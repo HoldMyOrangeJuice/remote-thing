@@ -127,12 +127,77 @@ function add_to_erase_object(x, y, thickness, obj)
     return object;
 }
 
-function handle_canvas_stuff(actions)
+function handle_actions(actions)
 {
+    for (let action of actions) {
 
+                if (action.undo || action.redo)
+                {
+                    clear_scene(false);
+                }
+                if (action.inactive)
+                {
+
+                    continue;
+                }
+
+
+                if (action.line_obj)
+                {
+
+                    for (let line of action.line_obj)
+                    {
+
+
+                        draw_line(line.x0,
+                            line.y0,
+                            line.x1,
+                            line.y1,
+                            line.c,
+                            action.inactive,
+                            false);
+                    }
+
+                }
+                if (action.erase_obj) {
+                    for (let erase_point of action.erase_obj)
+                    erase(erase_point.x, erase_point.y, erase_point.thick);
+                }
+                if (action.add_image) {
+                    let e = action.add_image;
+                    add_image(e.x, e.y, e.url, e.id, false)
+                }
+                if (action.move_image) {
+                    let e = action.move_image;
+                    move_image(e.id, e.x, e.y, false);
+
+                }
+                if (action.del_image) {
+                    let e = action.del_image;
+                    delete_image(e.id, false)
+                }
+                if (action.text)
+                {
+                    set_text(action.text, false);
+                }
+                if (action.draw_text)
+                {
+                    add_canvas_text(action.draw_text.x, action.draw_text.y, action.draw_text.text, 0, action.draw_text.font, false);
+                }
+              }
 }
 
-function handle_command_stuff(commands)
+function handle_commands(commands)
 {
-
+    for (let command of commands)
+                {
+                    if (command.command)
+                    {
+                        distribute_commands(command.command)
+                    }
+                    if (command.command_response)
+                    {
+                        command_response_handler(command);
+                    }
+                }
 }

