@@ -41,8 +41,8 @@
     </div>
     <div class="message-input-box">
         <div class="msg-inp-row">
-            <span id="math-field" class="hidden"></span>
-            <input id="text-field" placeholder="plain text">
+            <span id="math-field" class="hidden chat-input"></span>
+            <input id="text-field"  class="chat-input" placeholder="plain text">
             <script>
                 initialize_math_elem(document.getElementById("math-field"))
             </script>
@@ -68,6 +68,8 @@
 
     <div id="toolbar">
         <div class="toolbar-row ">
+            <input id="username" placeholder="username">
+{#            <input id="cook" placeholder="kuk"><button onclick="start()">submit</button>#}
             <button onclick="toggle(document.getElementById('draggable'))"> chat</button>
             <div class="aligned-group">
                  <select id="toolbox" >
@@ -206,6 +208,7 @@
     let darude = new Audio( "{% static  "darude.ogg" %}" );
     let relax = new Audio( "{% static  "relax.ogg" %}" );
     let soup = new Audio( "{% static  "soup.ogg" %}" );
+    let alert_s = new Audio( "{% static  "soup.ogg" %}" );
 </script>
 
     <script src="{% static "js/main.js" %}"></script>

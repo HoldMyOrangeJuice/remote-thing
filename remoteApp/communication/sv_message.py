@@ -6,8 +6,16 @@ from remoteApp.communication.Message import Message
 class ServerMessage:
     def __init__(self, page, commands=None, actions=None, consumer=None, all_consumers=None, except_consumer=None):
 
-        self.actions = actions
-        self.commands = commands
+        if isinstance(actions, list):
+            self.actions = actions
+        else:
+            self.actions = [actions]
+
+        if isinstance(commands, list):
+            self.commands = commands
+        else:
+            self.commands = [commands]
+
         self.page = page
 
         if all_consumers:
@@ -19,13 +27,13 @@ class ServerMessage:
 
     async def send(self):
 
-        # print("sending to", self.consumers, "except", self.except_consumer)
         for consumer in self.consumers:
             if consumer != self.except_consumer:
                 formatted_object = dict()
-                if self.actions:
+                if self.actions and self.actions[0]:
                     formatted_object["actions"] = self.actions
-                if self.commands:
+                if self.commands and self.commands[0]:
+
                     formatted_object["commands"] = self.commands
                 formatted_object["page"] = self.page
                 await consumer.send({"type": "websocket.send", "text": json.dumps(formatted_object)})

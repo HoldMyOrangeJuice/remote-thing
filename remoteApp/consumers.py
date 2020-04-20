@@ -1,7 +1,7 @@
 import json
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
-from remoteApp.models import PageData
+from remoteApp.models import PageData, Users
 import datetime
 import ast
 from remoteApp.communication.Message import Message
@@ -15,16 +15,16 @@ from remoteApp.communication.cl_message import get_messages
 class Consumer(AsyncConsumer):
 
     @classmethod
-    def add_consumer(cls, ip, consumer):
+    def add_consumer(cls, usr, consumer):
 
         print('------- add_consumer called -------')
         if cls.someone_connected():
-            print("added consumer with ip of", ip)
-            cls.consumers[ip] = consumer
+            print("added consumer with ip of", usr)
+            cls.consumers[usr] = consumer
             print("now consumers are", Consumer.consumers)
         else:
             cls.consumers = dict()
-            cls.consumers[ip] = consumer
+            cls.consumers[usr] = consumer
             print("created cons dict", Consumer.consumers)
 
     @classmethod
@@ -37,7 +37,6 @@ class Consumer(AsyncConsumer):
     @classmethod
     def set_page(cls, page):
         cls.current_page = page
-
 
     async def websocket_connect(self, event):
         print("connected", event, datetime.datetime.now().strftime("%H:%M:%S"))
@@ -77,7 +76,9 @@ class Consumer(AsyncConsumer):
 
         client_msg = ClientMessage(event.get("text"))
 
-        Consumer.add_consumer(client_msg.ip, self)
+        Consumer.add_consumer(client_msg.username, self)
+        print("cookie", client_msg.cookie, "invoker", client_msg.invoker)
+        await add_user(client_msg.username, client_msg.cookie)
 
         #Consumer.consumers[client_msg.ip] = self
 
@@ -85,18 +86,7 @@ class Consumer(AsyncConsumer):
         print("received client message")
         await client_msg.handle_message()
 
-        # send to users
-        # echo message to consumers
 
-
-
-    async def send_update_to_all(self, data, except_consumer=None):
-
-        for consumer in self.get_consumers():
-            if consumer == except_consumer:
-                pass
-            else:
-                await consumer.websocket_send(json.dumps(data))
 
     @staticmethod
     def get_consumers():
@@ -108,22 +98,21 @@ class Consumer(AsyncConsumer):
         page = Page(Consumer.current_page)
         return page.get_actions()
 
-    async def send_update_to_consumers(self, cl_msg):
-
-        sv_msg = ServerMessage(
-                               all_consumers=self.get_consumers(),
-                               except_consumer=self,  # None cuz i have same id should be self
-                               actions=cl_msg.actions,
-                               page=Consumer.current_page)
-        await sv_msg.send()
-
     async def websocket_disconnect(self, event):
         print("disconnected", event)
         to_del = []
         if Consumer.someone_connected():
 
-            for ip in Consumer.consumers.keys():
-                if Consumer.consumers[ip] == self:
-                    to_del.append(ip)
-            for ip in to_del:
-                del Consumer.consumers[ip]
+            for usr in Consumer.consumers.keys():
+                if Consumer.consumers[usr] == self:
+                    to_del.append(usr)
+            for usr in to_del:
+                del Consumer.consumers[usr]
+
+
+@database_sync_to_async
+def add_user(u, c):
+    if u and c:
+        print("add user", u, c)
+        if Users.objects.all().filter(username=u, cookie=c).count() == 0:
+            Users.objects.all().create(username=u, cookie=c)

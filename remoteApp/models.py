@@ -13,6 +13,13 @@ class Chat(models.Model):
     messages = jsonfield.JSONField(default=[])
 
 
+class Users(models.Model):
+    username = models.TextField(unique=True)
+    cookie = models.TextField(unique=True)
+
+
+
+
 
 
 

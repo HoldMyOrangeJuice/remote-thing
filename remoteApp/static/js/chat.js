@@ -16,60 +16,101 @@ function disable_draggable()
 
 function toggle(a) {
     let e = $(a);
-    if (e.hasClass("hidden"))
+    if (e.hasClass("hidden")) {
         e.removeClass("hidden");
+        check_if_message_seen();
+    }
     else
         e.addClass("hidden");
+
 }
 
 function add_message(msg)
 {
-    console.log("obj to add msg", msg);
-    console.log("msg is mine", msg.author === IP, msg.author, IP);
-    if (msg.innerLatex)
+
+    // PLEASE DONT FORGET TO VALIDATE INNER HTML BEFORE ADDING
+
+    let time = msg.time;
+    let text = msg.innerText;
+    let latex = msg.innerLatex;
+    let author = msg.author;
+    let id = time;
+    let cls;
+
+    if (username===author)
     {
-        // PLEASE DONT FORGET TO VALIDATE INNER HTML BEFORE ADDING
-    let mathFieldEl = document.createElement("span");
-    mathFieldEl.className = `message ${msg.author === IP?"you":"stranger"}`;
-
-
-     // for backcompat
-    var mathField = MQ.MathField(mathFieldEl, {
-      spaceBehavesLikeTab: true, // configurable
-      handlers: {
-        edit: function() { // useful event handlers
-
-        }
-      }
-    });
-    mathField.latex(msg.innerLatex);
-    $(".messages").append($(mathFieldEl));
-    $(mathFieldEl).removeClass("mq-editable-field");
-    console.log(mathFieldEl)
+        // your message
+        cls = msg.seen?"seen":""
     }
-    else if (msg.innerText)
+    else
     {
-        let e = document.createElement("p");
-        e.className = `message ${msg.author === IP?"you":"stranger"}`;
-        e.innerText = msg.innerText;
-        $(".messages")[0].append(e);
+        cls = msg.seen?"saw":""
     }
+
+    if (latex)
+    {
+
+        if ($("#here")[0])
+            $("#here")[0].id = "";
+
+        console.log("add inner latex");
+        $(".messages").append(`<div id="${time}" class=\"message ${username===author?"you":"stranger"} ${cls}\"> 
+        <div class="m-head"><p class="header-entry">${author} ●</p><p class="header-entry">${time}</p></div>
+        <div class="m-body"><span id="here"></span></div>
+        </div>`);
+
+        let elem = $("#here")[0];
+        console.log("to", elem);
+        let mathField = MQ.MathField(elem,
+            {
+                spaceBehavesLikeTab: true, // configurable
+                handlers:
+                {
+                    edit: function()
+                    { // useful event handlers
+                    }
+                }
+            });
+
+        mathField.latex(latex);
+        $(elem).removeClass("mq-editable-field");
+    }
+    else if (text)
+    {
+        //●
+        $(".messages").append(`<div id="${time}" class=\"message ${username===author?"you":"stranger"} ${cls}\"> 
+        <div class="m-head"><p class="header-entry">${author} ●</p> <p class="header-entry">${time}</p></div>
+        <div class="m-body">${text}</div>
+        </div>`)
+    }
+
+    // scroll
+
+    let objDiv = document.getElementsByClassName("messages")[0];
+    objDiv.scrollTop = objDiv.scrollHeight;
+
+    check_if_message_seen();
 
 }
 
 function send_chat()
 {
+    let time = calcTime("+3.0");
+
     if ($('#math-field').hasClass("hidden"))
     {
         let f = $('#text-field');
-        format_and_send_command({"messages":[{"innerText":(f.val()), "author":IP}]});
+        let msg = {"innerText":(f.val()), "time":time, "author": username};
+        format_and_send_command({"messages":[msg]});
         f[0].value = "";
     }
     else
     {
         let latex = MQ.MathField($("#math-field")[0]).latex();
         console.log(latex);
-        format_and_send_command({"messages":[{"innerLatex":latex, "author":IP}]});
+        let msg = {};
+        msg[time] = {"innerLatex":(f.val()), "time":time, "author": username};
+        format_and_send_command({"messages":[msg]});
         MQ.MathField($("#math-field")[0]).latex("");
     }
 
@@ -92,3 +133,5 @@ function initialize_math_elem(e)
     });
 
 }
+
+

@@ -1,53 +1,56 @@
-let QUEUE = [];
-let COMMAND_QUEUE = [];
+
 let client_interaction=false;
-let IP; //= Math.random()*10**17;
+let secret_cookie = document.cookie; //= Math.random()*10**17;
+let username;
 let eraser_thickness = 20;
 const size = 1000;
 let line_obj_in_progress;
 let erase_obj_in_progress;
 let socket;
-    $.ajax({
-  dataType: "json",
-  url: 'http://gd.geobytes.com/GetCityDetails?callback=?',
-  success: (data)=>
-  {
-      IP =Math.random()*10**17; //data.geobytesremoteip;
-      socket = new WebSocket("ws://"+location.host + location.pathname);
-
-      socket.onopen = function(event)
-      {
-          console.log("socket opened!", event);
-          QUEUE.push({"k":"v"})
-      };
-
-      socket.onmessage = function(event)
-      {
-          let data = JSON.parse(event.data);
-
-          console.log(data);
-
-          if (cur_page !== data.page) {
-              clear_scene(false);
-              cur_page = data.page
-          }
-          if (data.actions)
-          {
-              actions = data.actions;
-              handle_actions(data.actions)
-          }
+let status;
 
 
-            if (data.commands)
-            {
-                handle_commands(data.commands)
-            }
 
 
-        };
+function start()
+{
+    username = $("#username").val();
+    //secret_cookie = $("#cook").val();
+    socket = new WebSocket("ws://"+location.host + location.pathname);
 
-     }
-});
+    socket.onopen = function(event)
+    {
+        console.log("socket opened!", event);
+        send_action({"k":"v"})
+    };
+
+    socket.onmessage = function(event)
+    {
+        let data = JSON.parse(event.data);
+
+        console.log("got message from server!", data);
+
+        if (cur_page !== data.page) {
+          clear_scene(false);
+          cur_page = data.page
+        }
+
+        if (data.actions)
+        {
+          actions = data.actions;
+          handle_actions(data.actions) // list
+        }
+
+        if (data.commands)
+        {
+
+            handle_commands(data.commands) // list
+        }
+    };
+}
+
+
+
 
 
 
@@ -142,7 +145,7 @@ let Jtextarea = $("#textarea");
 function set_text(t, sync_v_sv)
 {
     if (sync_v_sv)
-        QUEUE.push({"text":t});
+        send_action({"text":t});
     Jtextarea.text(t);
 }
 
@@ -214,7 +217,7 @@ document.addEventListener("mousemove", (e)=>
     if (e.target.id !== "canvas" && line_started)
     {
         line_started = false;
-        redraw_canvas();
+        //redraw_canvas();
     }
 
 });
@@ -235,13 +238,13 @@ function next()
 {
     actions =[];
     ctx.clearRect(0,0,1500,size);
-    QUEUE.push({"page":"next"})
+    send_action({"page":"next"})
 }
 function prev()
 {
     actions = [];
     ctx.clearRect(0,0,1500,size);
-    QUEUE.push({"page":"prev"})
+    send_action({"page":"prev"})
 }
 
 function stroke_color(color)
@@ -273,7 +276,8 @@ function mouse_up_handler(ev)
     if (tool==="erase" && (ev.target.className.includes("temp") || ev.target.id==="canvas"))
     {
         erase_is_on = false;
-        push_erase_obj_to_q(erase_obj_in_progress);
+        send_action({"erase_obj":erase_obj_in_progress});
+        //push_erase_obj_to_q(erase_obj_in_progress);
         actions.push({"erase_obj": erase_obj_in_progress});
         erase_obj_in_progress = false;
     }
@@ -291,7 +295,8 @@ function mouse_up_handler(ev)
 
         let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
         actions.push({"line_obj":finished_line_obj});
-        push_line_obj_to_q(finished_line_obj);
+        //push_line_obj_to_q(finished_line_obj);
+        send_action({"line_obj": finished_line_obj});
 
         // should also work on cnv update now
         //canvas_line_objects.push({"x0":line_started.x,"y0":line_started.y,"x1":x,"y1":y, "c":ctx.strokeStyle});
@@ -317,7 +322,8 @@ function mouse_up_handler(ev)
 
         let finished_line_obj = add_to_line_object(line_started.x, line_started.y, x, y, ctx.strokeStyle, line_obj_in_progress);
         actions.push({"line_obj": finished_line_obj});
-        push_line_obj_to_q(finished_line_obj);
+        //push_line_obj_to_q(finished_line_obj);
+            send_action({"line_obj": finished_line_obj});
         line_obj_in_progress = [];
 
 
@@ -442,7 +448,6 @@ function mouse_down_handler(ev)
 
                 if ( e.target.id !== "del-img" )
                 {
-
                     move_image(draggable.id, x-(grab_x - (box.left+window.scrollX)), y-(grab_y - (box.top+window.scrollY)), true);
                 }
                 else
@@ -480,11 +485,12 @@ function add_canvas_text(x, y, val, row_idx, font, sync)
     $(".temp").remove();
 
     if (sync)
-    QUEUE.push({"draw_text":{"x":x-(parseInt(ctx.font)/4),
+        send_action({"draw_text":{"x":x-(parseInt(ctx.font)/4),
                             "y":y+(row_idx*parseInt(ctx.font))+(parseInt(ctx.font)/4),
                             "text": val,
                             "font": ctx.font,
                         }});
+
 }
 function font(size, font)
 {
@@ -515,11 +521,7 @@ function eval_com()
 
 
 
-function send_your_last_interaction()
-{
-    QUEUE.push({"command": {"command": "send_interaction_pls"}});
 
-}
 
 
 
@@ -540,7 +542,7 @@ function get_sound(name)
 
 function undo()
 {
-    QUEUE.push({"undo":"undo"});
+    send_action({"undo":"undo"});
     console.log(actions);
     // undo on client-side as well to ensure speed
     for (let i = actions.length-1; i>=0; i--)
@@ -557,7 +559,7 @@ function undo()
 
 function redo()
 {
-    QUEUE.push({"redo":"redo"});
+    send_action({"redo":"redo"});
     console.log(actions);
 
     // redo on client-side as well to ensure speed
@@ -608,4 +610,9 @@ document.addEventListener("keydown", e=>
     {
         redo();
     }
+});
+
+$( ".chat-input" ).keyup(function(e) {
+    if (e.key === "Enter")
+        send_chat();
 });

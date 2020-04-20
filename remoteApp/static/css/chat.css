@@ -10,17 +10,44 @@
 
 .message
 {
+    display: flex;
     padding: 5px;
     margin: 5px;
-    font: 13px/18px Tahoma,sans-serif,Arial,Helvetica;
+    flex-direction: column;
     line-height: 200%;
     width: 75%;
+}
+
+.m-head
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.header-entry
+{
+    margin: 0;
+    line-height: 1;
+    color: #9a9fb1;
+}
+
+.m-body
+{
+    font: 18px/23px Tahoma,sans-serif,Arial,Helvetica;
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+
+.timestamp
+{
+
 }
 
 .you
 {
     margin-right: 20%;
-    background-color: #6fdaff;
+    background-color: rgba(68, 143, 243, 0.98);
     margin-left: 5%;
 }
 .stranger
@@ -30,6 +57,11 @@
     background-color: #f1fff8;
 
 }
+.seen
+{
+    background-color: #9fc2ff;
+}
+
 .message-input-box
 {
     height: 20%;
@@ -110,3 +142,4 @@
     background-color: #96c2ff;
 
 }
+

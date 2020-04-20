@@ -1,6 +1,6 @@
 import json
 from remoteApp.communication.values import Update, Field
-from remoteApp.models import PageData, Chat
+from remoteApp.models import PageData, Chat, Users
 from remoteApp.communication.sv_message import ServerMessage
 from remoteApp.communication.Page import Page
 from channels.db import database_sync_to_async
@@ -14,18 +14,23 @@ class ClientMessage:
         data = json.loads(obj)
 
         # object, contains full event data. can be multi-layered
-        self.actions = data.get("actions")
-        self.commands = data.get("commands")
+        self.action = data.get("action")
+        self.command = data.get("command")
+        self.response = data.get("response")
 
-        self.ip = data.get("client")
+        self.cookie = data.get("cookie")
+        self.username = data.get("username")
+        self.invoker = data.get("invoker")
+        self.receiver = data.get("receiver")
+
 
     async def handle_message(self):
         from remoteApp.consumers import Consumer
         bulk_to_add = []
 
-        if self.actions:
+        if self.action:
 
-            for action in self.actions:
+                action = self.action
                 print(action)
                 if get_key(action) == "line_obj":
                     bulk_to_add.append(action)
@@ -68,23 +73,11 @@ class ClientMessage:
                     sv_msg = ServerMessage(actions=undo,
                                            page=Consumer.current_page,
                                            all_consumers=Consumer.get_consumers(),
-                                           except_consumer=get_consumer(self.ip))  # undos are made locally on client as well
+                                           except_consumer=get_consumer(self.invoker))  # undos are made locally on client as well
                     await sv_msg.send()
 
                 if action.get("redo"):
-                    # for (let i = actions.length-1; i >= 0; i--)
-                    #     {
-                    #         let
-                    #     action = actions[i];
-                    #     if (action.inactive === true & & (i == =0 | | !(actions[i-1].inactive)))
-                    #     {
-                    #     console.log("found acion to redo", action, i);
-                    #     action.inactive = false;
-                    #     redraw_canvas();
-                    #     break;
-                    #     }
-                    #
-                    #     }
+
                     actions = await self.get_actions(Consumer.current_page)
                     for i in reversed(list(range(len(actions)))):
                         action_of_db = actions[i]
@@ -101,13 +94,14 @@ class ClientMessage:
                     sv_msg = ServerMessage(actions=redo,
                                            page=Consumer.current_page,
                                            all_consumers=Consumer.get_consumers(),
-                                           except_consumer=get_consumer(self.ip))  # redos are made locally on client as well
+                                           except_consumer=get_consumer(self.invoker))  # redos are made locally on client as well
                     await sv_msg.send()
 
+                print("sending actions")
                 sv_msg = ServerMessage(actions=bulk_to_add,
                                        page=Consumer.current_page,
                                        all_consumers=Consumer.get_consumers(),
-                                       except_consumer=get_consumer(self.ip))
+                                       except_consumer=get_consumer(self.invoker))
                 await sv_msg.send()
 
                 if action.get("page"):
@@ -123,41 +117,46 @@ class ClientMessage:
                                            all_consumers=Consumer.get_consumers())
                     await sv_msg.send()
 
-        if self.commands:
-            for command in self.commands:
+        if self.command:
+                        print(f"GOT COMMAND:\nfrom: {self.username} = {self.invoker}\n com is: {self.command}\n cookie: {self.cookie}")
+                        command = self.command
 
-                if command.get("command"):
-                        command = command.get('command')
-
-                        if command.get("receiver") == "all":
+                        if self.receiver == "all" or self.receiver is None:
                             receiver = Consumer.get_consumers()
                         else:
-                            receiver = [get_consumer(command.get("receiver"))]
+                            receiver = get_consumer(self.receiver)
 
                         # filter commands server meant to handle
                         if command.get("delete_page") is not None:
-
                             page_to_del = command.get("delete_page")
                             await self.del_page(page_to_del)
-
                         if command.get("messages"):
                             for message in command.get("messages"):
+                                # validate message here
+                                if not await self.user_is_valid(u=self.invoker, c=self.cookie) or \
+                                        not await self.user_is_valid(u=message.get("author"), c=self.cookie) :
+                                    return
                                 await add_message(message)
+                        if command.get("seen"):
+                            id_of_seen_msg = command.get("seen")
+                            await see_message(id_of_seen_msg)
 
-                        invoker = self.ip
-                        print("receiver", receiver)
-                        sv_msg = ServerMessage(commands=[{"command": command, "invoker": invoker}],
-                                               page=get_consumer(invoker).current_page,
+                        print("sending command")
+                        sv_msg = ServerMessage(commands=[{"command": self.command, "invoker": self.invoker}],
+                                               page=Consumer.current_page,
                                                all_consumers=receiver)
                         await sv_msg.send()
 
-                if command.get("command_response"):
-                        response = command.get("command_response")
-                        invoker = response.get("invoker")
-                        sv_msg = ServerMessage(commands=[{"command_response": response, "client": self.ip}],   # , "client": self.ip
-                                               page=get_consumer(invoker).current_page,
-                                               consumer=get_consumer(invoker))
-                        await sv_msg.send()
+
+
+        if self.response:
+            print("sending response")
+            response = self.response
+            sv_msg = ServerMessage(commands=[{"command_response": response, "client": self.username}],
+                                   page=get_consumer(self.invoker).current_page,
+                                   consumer=get_consumer(self.invoker))
+            await sv_msg.send()
+
 
     @database_sync_to_async
     def save_to_db(self, bulk_to_add, page):
@@ -179,6 +178,12 @@ class ClientMessage:
         page = Page(index=p)
         page.delete()
 
+    @database_sync_to_async
+    def user_is_valid(self, u, c):
+        if Users.objects.all().filter(username=u, cookie=c).count() > 0:
+            return True
+        return False
+
 
 def get_key(d):
     try:
@@ -187,9 +192,9 @@ def get_key(d):
         return ""
 
 
-def get_consumer(ip):
+def get_consumer(username):
     from remoteApp.consumers import Consumer
-    return Consumer.consumers.get(ip)
+    return Consumer.consumers.get(username)
 
 
 @database_sync_to_async
@@ -216,6 +221,21 @@ def add_message(msg_obj):
     c.save()
 
 
+@database_sync_to_async
+def see_message(id):
+    print("seen", id)
+    # [{"id":{}}]
+    msgs = Chat.objects.all()[0].messages
+    for msg in msgs:
+        print("mesasge", msg)
+        if msg.get("time") == id:
+            msg["seen"] = True
+            print("upd", msg)
+
+            e = Chat.objects.all()[0]
+            print("upds", msgs)
+            e.messages = msgs
+            e.save()
 
 
 

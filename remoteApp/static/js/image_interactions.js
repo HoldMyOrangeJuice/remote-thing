@@ -14,7 +14,7 @@ function add_image(x, y, url, id, sync_with_server)
 
     if (sync_with_server)
     {
-        QUEUE.push({"add_image":{"x":x, "y":y, "url": url, "id":element.id}})
+        send_action({"add_image":{"x":x, "y":y, "url": url, "id":element.id}})
     }
 }
 
@@ -29,7 +29,7 @@ function move_image(id, x, y, sync_with_server)
     element.style.top = y+"px";
     if (sync_with_server)
     {
-        QUEUE.push({"move_image":{"x":x, "y":y, "id": id}})
+        send_action({"move_image":{"x":x, "y":y, "id": id}})
     }
 }
 
@@ -39,6 +39,6 @@ function delete_image(id, sync_with_server)
     element.remove();
     if (sync_with_server)
     {
-        QUEUE.push({"del_image":{"id": id}})
+        send_action({"del_image":{"id": id}})
     }
 }

@@ -130,7 +130,7 @@ function add_to_erase_object(x, y, thickness, obj)
 function handle_actions(actions)
 {
     for (let action of actions) {
-
+                if (!action)continue;
                 if (action.undo || action.redo)
                 {
                     clear_scene(false);
@@ -190,14 +190,17 @@ function handle_actions(actions)
 function handle_commands(commands)
 {
     for (let command of commands)
-                {
-                    if (command.command)
-                    {
-                        distribute_commands(command.command)
-                    }
-                    if (command.command_response)
-                    {
-                        command_response_handler(command);
-                    }
-                }
+    {
+        if (!command)continue;
+
+        if (command.command)
+        {
+            distribute_commands(command);
+
+        }
+        if (command.command_response)
+        {
+            command_response_handler(command);
+        }
+    }
 }

@@ -10,22 +10,13 @@ class ClientMessage
 
 }
 
-setInterval(()=>
+function send_action(action)
 {
-
-    if (QUEUE.length > 0)
-    {
-        socket.send(JSON.stringify({"actions": QUEUE, "client": IP}));
-        QUEUE = [];
-    }
-    if (COMMAND_QUEUE.length > 0)
-    {
-        socket.send(JSON.stringify({"commands": COMMAND_QUEUE, "client": IP}));
-        COMMAND_QUEUE = [];
-    }
+    socket.send(JSON.stringify({"action": action, "cookie": secret_cookie, "username": username}));
+}
 
 
-}, 1000);
+
 
 function handle_tool_change(tool)
 {
@@ -94,6 +85,52 @@ function push_erase_obj_to_q(object)
         console.log('erase object done:', object);
         QUEUE.push({"erase_obj":object})
     }
+
+}
+
+function calcTime(offset) {
+    var d = new Date();
+    var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+    var nd = new Date(utc + (3600000*offset));
+    return nd.toLocaleString();
+}
+
+$(window).blur(function(){
+  status = "offline";
+  format_and_send_command({"status_update": status})
+});
+
+$(window).focus(function(){
+  status = "online";
+  format_and_send_command({"status_update": status});
+  check_if_message_seen();
+
+});
+
+
+function check_if_message_seen()
+{
+    for (let message of document.getElementsByClassName("message"))
+    {
+        if (!($(message).hasClass("saw")) && visible(message) && !($(message).hasClass("you"))
+            && !$("#draggable").hasClass("hidden"))
+        {
+            $(message) .addClass("saw");
+            console.log(message, "not seen");
+            format_and_send_command({"seen":message.id})
+        }
+    }
+}
+
+function visible(e)
+{
+    let elementTop = $(e).offset().top;
+    let elementBottom = elementTop + $(e).outerHeight();
+
+    let viewportTop = $(window).scrollTop();
+    let viewportBottom = viewportTop + $(window).height();
+
+    return elementBottom > viewportTop && elementTop < viewportBottom && document.hasFocus();
 
 }
 

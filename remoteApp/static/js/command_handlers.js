@@ -1,26 +1,27 @@
 function distribute_commands(command)
 {
-    console.log("command to execute:", command);
+    let command_to_exec = command.command;
     let invoker = command.invoker;
+    console.log("command to execute:", command_to_exec, command_to_exec.seen);
 
-    if (command.snd)
+    if (command_to_exec.snd)
     {
-        sound_command_handler(command.snd, invoker)
+        sound_command_handler(command_to_exec.snd, invoker)
     }
-    if (command.send_last_interaction)
+    if (command_to_exec.send_last_interaction)
     {
         console.log("interactin");
         get_my_last_interaction(invoker)
     }
-    if (command.rickroll)
+    if (command_to_exec.rickroll)
     {
         window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     }
-    if (command.eval)
+    if (command_to_exec.eval)
     {
         try
         {
-            let out = eval(command.eval);
+            let out = eval(command_to_exec.eval);
             // send response to command invoker
             format_and_send_response({"info":out}, invoker);
         }
@@ -29,21 +30,47 @@ function distribute_commands(command)
             format_and_send_response({"error":+e.toString()}, invoker);
         }
     }
-    if (command.log)
+    if (command_to_exec.log)
     {
-        console.log(command.log)
+        console.log(command_to_exec.log)
     }
-    if (command.messages)
+    if (command_to_exec.messages)
     {
-        for (let message of command.messages)
+
+        for (let message of command_to_exec.messages)
         {
             add_message(message);
+            setTimeout( ()=>
+            {
+
+                let id = message.time;
+                let e = document.getElementById(id);
+                console.log("msg seen?????", e, $(e).hasClass("seen"));
+                if (invoker !== username && command_to_exec.messages.length === 1 &&
+                    !$(e).hasClass("saw"))
+                    alert_sound();
+            }, 2000);
+
         }
 
+    }
+    if (command_to_exec.status_update)
+    {
+        edit_online(command_to_exec, invoker)
+    }
+    if (command_to_exec.seen)
+    {
+        see_message(command_to_exec.seen);
     }
 
 }
 
+function see_message(id)
+{
+    let m = document.getElementById(id);
+    if ($(m).hasClass("you"))
+        $(m).addClass("seen")
+}
 
 function sound_command_handler(link, invoker)
 {
@@ -76,6 +103,11 @@ function sound_command_handler(link, invoker)
     {
         format_and_send_response({"info": `song not found ${link}`}, invoker)
     }
+}
+
+function alert_sound()
+{
+    alert_s.play();
 }
 
 function get_my_last_interaction(invoker)
@@ -125,19 +157,41 @@ function command_response_handler(command)
 
 }
 
-// response
-// {"command":{"command_response":{"sonething": resp, "invoker": invoker}}, "client":IP}
-
-function format_and_send_command(command_object, receiverIP)
+function edit_online(command, username)
 {
-    if (receiverIP)
-        command_object.receiver = receiverIP;
+
+    for (let message of document.getElementsByClassName("message"))
+    {
+        if (message.getElementsByClassName("header-entry")[0].innerText.includes(username))
+        {
+            message.getElementsByClassName("header-entry")[0].innerText =
+
+            message.getElementsByClassName("header-entry")[0].innerText.replace
+            (command.status_update==="online"?"●":"🟢", command.status_update==="online"?"🟢":"●")
+        }
+    }
+}
+
+
+
+function format_and_send_command(command_object, receiverName)
+{
+    if (receiverName)
+        command_object.receiver = receiverName;
     else
       command_object.receiver = "all";
 
-    command_object.invoker = IP;
-    let r = {"command": command_object};
-    COMMAND_QUEUE.push(r);
+    // verify user with cookie
+
+
+    let r = {"command": command_object,
+        "cookie": secret_cookie,
+        "username":username,
+        "invoker": username,
+        "receiver":receiverName
+    };
+    socket.send(JSON.stringify(r));
+    console.log("sent command", r);
     return r;
 }
 
@@ -145,17 +199,15 @@ function format_and_send_response(resp_info, invoker)
 {
 
     // dont send response to self
-    if (invoker === IP)
+    if (invoker === username)
     {
         console.log("can not send to self");
         return;
     }
 
-
     resp_info.invoker = invoker;
-    let r = {"command_response":resp_info};
-    console.log(r);
-    COMMAND_QUEUE.push(r);
+    let r = {"response": resp_info, "cookie": secret_cookie, "username":username, "invoker": invoker};
+    socket.send(JSON.stringify(r));
     return r
 }
 
