@@ -1,22 +1,7 @@
-class ClientMessage
-{
-    constructor(socket, data)
-    {
-        this.socket = socket;
-        this.data = data;
-        QUEUE.add(this);
-    }
-
-
-}
-
 function send_action(action)
 {
     socket.send(JSON.stringify({"action": action, "cookie": secret_cookie, "username": username}));
 }
-
-
-
 
 function handle_tool_change(tool)
 {
@@ -44,14 +29,12 @@ let y_min_ignored_dist = 20;
 let ignored_line_dist = 5;
 
 
-
 function dist(x0, y0, x1, y1) {
     return Math.sqrt(Math.pow(y1-y0, 2) + Math.pow(x1-x0, 2))
 }
 
 function toggle_math()
 {
-    console.log("toggle");
     let math_input = $("#math-field");
     let text_input = $("#text-field");
 
@@ -65,27 +48,6 @@ function toggle_math()
     math_input.addClass("hidden");
     text_input.removeClass("hidden");
     }
-
-}
-
-function push_line_obj_to_q(object)
-{
-    if (object)
-    {
-        console.log('line object done:', object);
-        QUEUE.push({"line_obj":object})
-    }
-
-}
-
-function push_erase_obj_to_q(object)
-{
-    if (object)
-    {
-        console.log('erase object done:', object);
-        QUEUE.push({"erase_obj":object})
-    }
-
 }
 
 function calcTime(offset) {
@@ -97,6 +59,7 @@ function calcTime(offset) {
 
 $(window).blur(function(){
   status = "offline";
+  console.log("offline");
   format_and_send_command({"status_update": status})
 });
 
@@ -106,7 +69,6 @@ $(window).focus(function(){
   check_if_message_seen();
 
 });
-
 
 function check_if_message_seen()
 {
@@ -134,7 +96,11 @@ function visible(e)
 
 }
 
-
+function add_status(t)
+{
+    let log = $(".log")[0];
+    log.innerText += "\n" + t.toString()
+}
 
 
 

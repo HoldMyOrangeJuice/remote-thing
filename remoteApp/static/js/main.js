@@ -15,13 +15,24 @@ let status;
 function start()
 {
     username = $("#username").val();
-    //secret_cookie = $("#cook").val();
-    socket = new WebSocket("ws://"+location.host + location.pathname);
+    $.ajax(
+        {
+
+            data: { "get_username":secret_cookie },
+            success: function(r)
+            {
+                console.log(r);
+                if (r.username)
+                {
+                    username = r.username;
+                    console.log(username);
+                }
+                    socket = new WebSocket("ws://"+location.host + location.pathname);
 
     socket.onopen = function(event)
     {
         console.log("socket opened!", event);
-        send_action({"k":"v"})
+        send_action({"connect":"connect"})
     };
 
     socket.onmessage = function(event)
@@ -30,9 +41,12 @@ function start()
 
         console.log("got message from server!", data);
 
-        if (cur_page !== data.page) {
-          clear_scene(false);
-          cur_page = data.page
+        if (data.page !== undefined && cur_page !== data.page)
+        {
+            if (cur_page !== undefined)
+                clear_scene(false);
+          cur_page = data.page;
+          console.log("page now", cur_page);
         }
 
         if (data.actions)
@@ -43,10 +57,20 @@ function start()
 
         if (data.commands)
         {
-
             handle_commands(data.commands) // list
         }
+        if (data.status)
+        {
+            add_status(data.status)
+        }
+        if (data.username)
+        {
+            username = data.username;
+        }
     };
+        }
+    });
+
 }
 
 
@@ -59,9 +83,15 @@ let last_image_drop = new Date().getTime();
 function drop(evt)
 {
     if (tool === "edit background")
+    {
+        //evt.stopPropagation();
+        //evt.preventDefault();
         return;
+    }
 
-    console.log(evt);
+
+    console.log("dropped and created image");
+
     if (new Date().getTime() - last_image_drop < 1000) {
         return;
     }
@@ -86,7 +116,8 @@ function drop(evt)
     img.src = url[1];
 
 
-    img.onload = () => {
+    img.onload = () =>
+    {
         let width = img.width;
         let height = img.height;
         add_image(page_x - width / 2, page_y - height / 2, url[1], undefined, true);
@@ -122,7 +153,7 @@ let ctx = canvas[0].getContext('2d');
 let actions = [];
 let line_started = false;
 let line_continued = false;
-let cur_page = 228; // number is relative, i dont care
+let cur_page; // number is relative, i dont care
 
 let tool = $("#toolbox").val();
 let erase_is_on = false;

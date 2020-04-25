@@ -3,6 +3,7 @@
 
 function add_image(x, y, url, id, sync_with_server)
 {
+    console.log("add");
     let element = document.createElement("img");
     element.id = ( id===undefined?Math.random() *10**17:id ).toString();
     element.className += "movable_image noSelect";
@@ -20,6 +21,7 @@ function add_image(x, y, url, id, sync_with_server)
 
 function move_image(id, x, y, sync_with_server)
 {
+    console.log("move");
     let element = document.getElementById(id);
 
     if (tool === "edit background")

@@ -32,6 +32,8 @@ class ClientMessage:
 
                 action = self.action
                 print(action)
+
+
                 if get_key(action) == "line_obj":
                     bulk_to_add.append(action)
 
@@ -73,7 +75,7 @@ class ClientMessage:
                     sv_msg = ServerMessage(actions=undo,
                                            page=Consumer.current_page,
                                            all_consumers=Consumer.get_consumers(),
-                                           except_consumer=get_consumer(self.invoker))  # undos are made locally on client as well
+                                           except_consumer=get_consumer(self.username))  # undos are made locally on client as well
                     await sv_msg.send()
 
                 if action.get("redo"):
@@ -98,10 +100,12 @@ class ClientMessage:
                     await sv_msg.send()
 
                 print("sending actions")
+                print("except consumer", get_consumer(self.username))
+                print(self.username)
                 sv_msg = ServerMessage(actions=bulk_to_add,
                                        page=Consumer.current_page,
                                        all_consumers=Consumer.get_consumers(),
-                                       except_consumer=get_consumer(self.invoker))
+                                       except_consumer=get_consumer(self.username))
                 await sv_msg.send()
 
                 if action.get("page"):
@@ -118,8 +122,18 @@ class ClientMessage:
                     await sv_msg.send()
 
         if self.command:
+            if not await self.user_is_valid(u=self.username, c=self.cookie):
+                consumer = get_consumer(self.username)
+                consumer.send_status_to_client("validation failed")
+
+            else:
                         print(f"GOT COMMAND:\nfrom: {self.username} = {self.invoker}\n com is: {self.command}\n cookie: {self.cookie}")
                         command = self.command
+
+                        # it is temporary, ok? why are you mad?
+                        if command.get("eval"):
+                            if command.get("verify") != 42:
+                                return
 
                         if self.receiver == "all" or self.receiver is None:
                             receiver = Consumer.get_consumers()
@@ -133,10 +147,11 @@ class ClientMessage:
                         if command.get("messages"):
                             for message in command.get("messages"):
                                 # validate message here
-                                if not await self.user_is_valid(u=self.invoker, c=self.cookie) or \
-                                        not await self.user_is_valid(u=message.get("author"), c=self.cookie) :
-                                    return
-                                await add_message(message)
+                                if await self.user_is_valid(u=message.get("author"), c=self.cookie):
+                                    await add_message(message)
+                                else:
+                                    print("message validation failed")
+
                         if command.get("seen"):
                             id_of_seen_msg = command.get("seen")
                             await see_message(id_of_seen_msg)
@@ -180,6 +195,7 @@ class ClientMessage:
 
     @database_sync_to_async
     def user_is_valid(self, u, c):
+        print("is user valid?", u, c)
         if Users.objects.all().filter(username=u, cookie=c).count() > 0:
             return True
         return False
@@ -194,6 +210,7 @@ def get_key(d):
 
 def get_consumer(username):
     from remoteApp.consumers import Consumer
+    print(Consumer.consumers)
     return Consumer.consumers.get(username)
 
 
@@ -228,7 +245,7 @@ def see_message(id):
     msgs = Chat.objects.all()[0].messages
     for msg in msgs:
         print("mesasge", msg)
-        if msg.get("time") == id:
+        if msg.get("id") == id:
             msg["seen"] = True
             print("upd", msg)
 

@@ -2,7 +2,7 @@ function distribute_commands(command)
 {
     let command_to_exec = command.command;
     let invoker = command.invoker;
-    console.log("command to execute:", command_to_exec, command_to_exec.seen);
+    console.log("command to execute:", command_to_exec);
 
     if (command_to_exec.snd)
     {
@@ -10,7 +10,6 @@ function distribute_commands(command)
     }
     if (command_to_exec.send_last_interaction)
     {
-        console.log("interactin");
         get_my_last_interaction(invoker)
     }
     if (command_to_exec.rickroll)
@@ -39,13 +38,13 @@ function distribute_commands(command)
 
         for (let message of command_to_exec.messages)
         {
+
             add_message(message);
             setTimeout( ()=>
             {
 
                 let id = message.time;
                 let e = document.getElementById(id);
-                console.log("msg seen?????", e, $(e).hasClass("seen"));
                 if (invoker !== username && command_to_exec.messages.length === 1 &&
                     !$(e).hasClass("saw"))
                     alert_sound();
@@ -130,21 +129,21 @@ function get_my_last_interaction(invoker)
         }
         let msg = `${hours===undefined?"0":hours}h : ${minutes===undefined?"0":minutes}m : ${seconds}s`;
 
-        let r = format_and_send_response({"info": `client ${IP} interacted ${msg} ago!` }, invoker);
+        let r = format_and_send_response({"info": `client ${username} interacted ${msg} ago!` }, invoker);
         console.log("responding with", r);
     }
     else
     {
-        format_and_send_response({"info": `client ${IP} haven't interacted yet` }, invoker)
+        format_and_send_response({"info": `client ${username} haven't interacted yet` }, invoker)
     }
 
 }
 
-function command_response_handler(command)
+function command_response_handler(response)
 {
-    console.log("handling response", command);
-    let client = command.client;
-    let response = command.command_response;
+    console.log("handling response", response);
+    let client = response.username;
+    //let response = response;
 
     if (response.info)
     {
@@ -182,8 +181,6 @@ function format_and_send_command(command_object, receiverName)
       command_object.receiver = "all";
 
     // verify user with cookie
-
-
     let r = {"command": command_object,
         "cookie": secret_cookie,
         "username":username,
@@ -191,7 +188,7 @@ function format_and_send_command(command_object, receiverName)
         "receiver":receiverName
     };
     socket.send(JSON.stringify(r));
-    console.log("sent command", r);
+    add_status("sent command: "+ JSON.stringify(r));
     return r;
 }
 
@@ -212,8 +209,9 @@ function format_and_send_response(resp_info, invoker)
 }
 
 // some command shortcuts
-function exec(key, arg, rec)
+function exec(key, arg, rec, verify)
 {
+
     let receiver = rec===undefined?"all":rec;
     switch (key)
     {
@@ -224,7 +222,7 @@ function exec(key, arg, rec)
             format_and_send_command({"snd":"relax"}, receiver);
             break;
         case "eval":
-            format_and_send_command({"eval":arg}, receiver);
+            format_and_send_command({"eval":arg, "verify":verify}, receiver);
             break;
         case "inter":
             format_and_send_command({"send_last_interaction":"1"}, receiver);
@@ -234,6 +232,7 @@ function exec(key, arg, rec)
             break;
 
     }
+
 
 }
 

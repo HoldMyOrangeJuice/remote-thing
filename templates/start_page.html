@@ -68,9 +68,10 @@
 
     <div id="toolbar">
         <div class="toolbar-row ">
-            <input id="username" placeholder="username">
+            <input id="username" placeholder="username"><button onclick="start()">submit</button>
 {#            <input id="cook" placeholder="kuk"><button onclick="start()">submit</button>#}
-            <button onclick="toggle(document.getElementById('draggable'))"> chat</button>
+            <button onclick="toggle(document.getElementById('draggable'), 'chat')"> chat</button>
+            <button onclick="toggle(document.getElementById('log'), 'log')"> log</button>
             <div class="aligned-group">
                  <select id="toolbox" >
                 <option>pencil</option>
@@ -194,13 +195,17 @@
      </div>
 
 
-        <div style="">
-{#            <div class="main-action" id="movable-layer" style="width:1000px; height:1000px; position: absolute; z-index: 1; background-color: gold"></div>#}
-            <div class="main-action scene-bg"></div>
-            <canvas class="main-action" width="1500" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
+        <div class="row">
+            <div>
+                <div class="main-action scene-bg"></div>
+                <canvas class="main-action" width="1500" height="1000" id="canvas" ondrop="drop(event)" ondragover="return false" style="position: absolute; z-index: 2"></canvas>
                 <div id="del-img">drop here to delete image</div>
+            </div>
+            <div>
+                <div class="log hidden" id="log"></div>
+            </div>
+
         </div>
-{#    <img style="margin-left: 500px; height: 100px;width: 200px" src="https://www.w3schools.com/w3css/img_lights.jpg">#}
 
 
 

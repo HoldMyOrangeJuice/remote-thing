@@ -10,7 +10,7 @@ from remoteApp.communication.cl_message import ClientMessage
 from remoteApp.communication.values import Update, Field, Initiator
 from remoteApp.communication.Page import Page
 from remoteApp.communication.cl_message import get_messages
-
+import asyncio
 
 class Consumer(AsyncConsumer):
 
@@ -63,7 +63,6 @@ class Consumer(AsyncConsumer):
             msg = ServerMessage(consumer=self, commands=[{"command": {"messages": messages}}], page=Consumer.current_page)
             await msg.send()
 
-
     async def websocket_send(self, data):
 
         await self.send(
@@ -76,17 +75,22 @@ class Consumer(AsyncConsumer):
 
         client_msg = ClientMessage(event.get("text"))
 
-        Consumer.add_consumer(client_msg.username, self)
-        print("cookie", client_msg.cookie, "invoker", client_msg.invoker)
-        await add_user(client_msg.username, client_msg.cookie)
+        if client_msg.action and client_msg.action.get("connect"):
 
-        #Consumer.consumers[client_msg.ip] = self
+            result = await add_user(u=client_msg.username, c=client_msg.cookie)
 
-        # save to db or execute command
-        print("received client message")
+            if result.get("error"):
+                await self.send_status_to_client(f"server exception >>> {result.get('error')} \n connection aborted")
+                await self.websocket_disconnect("session deleted due to connection error")
+                raise Exception
+
+            if result.get("username") and client_msg.username == "":
+                await self.send_username_to_client(result.get("username"))
+                Consumer.add_consumer(result.get("username"), self)
+            else:
+                Consumer.add_consumer(client_msg.username, self)
+
         await client_msg.handle_message()
-
-
 
     @staticmethod
     def get_consumers():
@@ -109,10 +113,45 @@ class Consumer(AsyncConsumer):
             for usr in to_del:
                 del Consumer.consumers[usr]
 
+    async def send_status_to_client(self, data):
+        await self.websocket_send(json.dumps({"status": data}))
+    async def send_username_to_client(self, data):
+        await self.websocket_send(json.dumps({"username": data}))
+
+
+
 
 @database_sync_to_async
 def add_user(u, c):
-    if u and c:
+    if c:
         print("add user", u, c)
-        if Users.objects.all().filter(username=u, cookie=c).count() == 0:
-            Users.objects.all().create(username=u, cookie=c)
+        if Users.objects.all().filter(cookie=c).count() == 0:
+            # cookie is original
+            if Users.objects.all().filter(username=u).count() == 0:
+                # name is original, adding user
+                Users.objects.all().create(username=u, cookie=c)
+                print("actually added", u, c)
+                return {"username": u, "cookie": c}
+            if u == "":
+                # cookie original no name provided by user
+                return {"error": "provide username"}
+            else:
+                # no such cookie in db, user never logged in
+                return {"error": "user never logged in"}
+        else:
+            # cookie is not original
+            if u == "":
+                # name is empty, get name by cookie
+                if Users.objects.all().filter(cookie=c).count() > 0:
+                    username = Users.objects.all().filter(cookie=c)[0].username
+                    return {"username": username, "cookie": c}
+            elif u != "" and Users.objects.all().filter(username=u, cookie=c).count()>0:
+                # name and cookie provided by user are valid
+                return {"username": u, "cookie": c}
+            else:
+                # name is invalid for that cookie
+                return {"error": "name is invalid for that cookie leave name field empty"}
+
+    else:
+        # cookie not sent
+        return {"error": "cookie not sent"}
